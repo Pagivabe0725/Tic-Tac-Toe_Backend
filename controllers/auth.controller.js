@@ -1,41 +1,91 @@
-
 import DATABASE from '../database/database.js'
 
-
-
-const singUp = async (req, res, next) => {
-   
-    const body = req.body;
-    let newUser
-    if(body.username && body.password){
-        try {
-            newUser = await DATABASE.userCreator(body.username, body.password);
-            res.status(201).json({ message: 'User created', userId: newUser.id });
-        } catch (error) {
-            res.status(400).json({ error: error.message });
-        }
-    } else {
-        res.status(400).json({ error: 'Username and password are required' });
-    }
-    res.end()
+const signUp = async (req, res, next) => {
+  const body = req.body;
+  let newUser
+  if(body.email && body.password){
+      try {
+          newUser = await DATABASE.userCreator(body.email, body.password);
+          res.status(201).json({ userId: newUser.id });
+      } catch (error) {
+          error.statusCode = 400
+          next(error)
+      }
+  } else {
+      error.statusCode = 400
+      next(error)
+  }
 }
 
+const checkSession = async (req, res, next) => {
 
-const login = async (req, res , next)=>{
+  if (!req.session.userId) {
+    const error = new Error('User is not logged in!')
+    error.statusCode = 401
+    next(error)
+  }
 
-    const body = req.body
-    if(body.username && body.password){
-        
-        try {
-            const resultUser = await DATABASE.authenticateUser(body.username, body.password)
-            res.status(201).json(resultUser)
-        }catch(error){
-           res.status(400).json({ error: error.message });
-        }
+  try {
+    const user = await DATABASE.getUserByidentifier(req.session.userId);
+    return res.json({ user: user });
+  }
+  catch(error){
+    if(!error.statusCode){
+      error.statusCode = 500
     }
+    next(error)
+  }
+
+};
+
+const login = async (req, res, next) => {
+  console.log('login')
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Missing credentials" });
+  }
+
+  try {
+    const user = await DATABASE.authenticateUser(email, password);
+    
+    req.session.userId = user.userId;
+
+    return res.status(201).json({ user: user});
+  } catch (error) {
+    if(!error.statusCode){
+      error.statusCode = 500
+    }
+    next(error)
+  }
+};
+
+const logout = async (req, res) => {
+  console.log('IIIOOO')
+  console.log(req.body)
+
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Session destroy error:', err);
+      return res.sendStatus(500); // Hibakezelés
+    }
+
+    console.log('almafa');
+    console.log(req.session); 
+    res.clearCookie("tic-tac-toe_session");
+    res.sendStatus(204);
+  });
+};
+
+
+const alma = (req, res)=> {
+  console.log('IIII')
 }
- 
-export default {
-    singUp,
-    login
+
+export default { 
+    signUp,
+    checkSession,
+    logout,
+    login,
+    alma
 }

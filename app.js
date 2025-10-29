@@ -4,40 +4,34 @@ import bodyParser from "body-parser";
 import session from "express-session";
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import csrf  from 'csurf'
 
 import Connection from "./models/database-connection.model.js"
 import MySQLStoreImport from "express-mysql-session";
 import auth from "./routes/auth.router.js"; 
 
-const MySQLStore = MySQLStoreImport(session);
-
-
 dotenv.config({path:'./environment/database.environment.env'})
-console.log('IIIOO')
-console.log(
-process.env.DB_HOST,
-process.env.DB_PORT,
-process.env.DB_USER,
-)
+const MySQLStore = MySQLStoreImport(session);
+const app = express();
+const csrfProtection = csrf()
 const sessionStore = new MySQLStore({
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
+  port: parseInt(process.env.DB_PORT),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  createDatabaseTable: true,
+  createDatabaseTable: true, 
   clearExpired: true,
   checkExpirationInterval: 1000* 60 *5
 });
 
-const app = express();
-
 app.use(cors({
   origin : 'http://localhost:4200',
-  credentials: true
+  credentials: true,
 }));
 
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+//app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(cookieParser()); 
 
@@ -48,41 +42,30 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
     cookie: {
-    maxAge: 1000*60 *60* 1
+    maxAge: 1000*60 *60* 24,
+    httpOnly:true,
+    secure:false,
+    sameSite:'lax'
   }
-
 }));
 
-app.get("/", (req, res, next) => {
+app.use(csrfProtection)
 
-  res.writeHead(200, { "Content-Type": "text/html" });
-  res.write(`
-    <form action="/users/login" method="POST">
-      <fieldset>
-        <legend>Login</legend>
-        
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
-        <br><br>
+app.get('/csrf-token', (req, res) => {
+  //console.log(req.session)
+  res.json({ csrfToken: req.csrfToken()});
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        <br><br>
-
-        <button type="submit">Login</button>
-      </fieldset>
-    </form>
-  `);
-  res.end();
 });
 
-app.use('/',(req,res,next)=>{
-
- req.session.something = 'almafa2'
- next()
-})
-
 app.use('/users', auth);
+
+app.use((error, req, res, next)=>{
+  console.log(error)
+  const status = error.statusCode || 500;
+  const message = error.message;
+  const data = error.data;
+  res.status(status).json({ message: message, data: data });
+})
 
 Connection.sync()
   .then(() => {

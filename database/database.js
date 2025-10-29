@@ -31,6 +31,21 @@ async function isExistUser(userId){
     return !!actualUser
 }
 
+
+async function getUserByidentifier(userId){
+
+    if(typeof userId !== 'number'){
+        throw new Error('Parameter with bad type')
+    }
+
+    if(!isExistUser(userId)){
+        throw new Error('User does not exist')
+    }
+
+    const actualUser = await User.findOne({where: {userId: userId}})
+    return actualUser
+}
+
 async function userCreator(email , password){
     
     if(typeof email !== 'string' || typeof password !== 'string'){
@@ -91,4 +106,6 @@ export default {
     userCreator,
     gameCreator,
     authenticateUser,
+    getUserByidentifier,
+    isUsedEmail,
 }
