@@ -3,6 +3,7 @@
 import User from "../models/user.model.js"
 import Game from "../models/game.model.js";
 import bcrypt from 'bcrypt'
+import { nanoid } from "nanoid";
 
 const saltRounds = 12;
 
@@ -56,7 +57,7 @@ async function userCreator(email , password){
 
     if(!emailUsed){
         const hashedPassword = await bcrypt.hash(password, saltRounds) 
-        return User.create({email:email, password:hashedPassword })
+        return User.create({userId: nanoid() ,email:email, password:hashedPassword })
     }
     else{
         throw new Error('This email is already used')
@@ -95,6 +96,7 @@ async function gameCreator(userId){
     }
 
     const newGame = await Game.create({
+        gameId:nanoid(),
         userId: userId,
         step: 0,
     });

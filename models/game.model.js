@@ -3,11 +3,10 @@ import { DataTypes } from "sequelize";
 
 const Game = Connection.define('Game', {
     gameId:{
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
         unique: true,
         primaryKey: true,
-        autoIncrement:true
     },
 
     step:{
@@ -36,7 +35,7 @@ const Game = Connection.define('Game', {
 
 
     userId:{
-        type:DataTypes.INTEGER,
+        type:DataTypes.STRING,
         allowNull:false,
         references:{
             model:'Users',

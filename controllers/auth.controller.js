@@ -50,8 +50,9 @@ const login = async (req, res, next) => {
     const user = await DATABASE.authenticateUser(email, password);
     
     req.session.userId = user.userId;
+    req.session.userExpire = Date.now() + 1000 * 60 * 60 * 48
 
-    return res.status(201).json({ user: user});
+    return res.status(200).json({ user: user});
   } catch (error) {
     if(!error.statusCode){
       error.statusCode = 500
@@ -60,32 +61,31 @@ const login = async (req, res, next) => {
   }
 };
 
-const logout = async (req, res) => {
-  console.log('IIIOOO')
-  console.log(req.body)
+const logout = (req, res, next) => {
+  if (!req.session ) {
+    const error = new Error('Session does not exist');
+    error.statusCode = 400;
+    return next(error);
+  }
+  else if(!req.session.userId){
+    const error = new Error('Session does not contain userId');
+    error.statusCode = 400;
+    return next(error);
+  }
 
-  req.session.destroy(err => {
-    if (err) {
-      console.error('Session destroy error:', err);
-      return res.sendStatus(500); // Hibakezelés
-    }
 
-    console.log('almafa');
-    console.log(req.session); 
-    res.clearCookie("tic-tac-toe_session");
-    res.sendStatus(204);
-  });
+  delete req.session.userId;
+  delete req.session.userExpire
+
+
+  
+    res.status(200).json({message: 'logout was success'})
 };
-
-
-const alma = (req, res)=> {
-  console.log('IIII')
-}
+  
 
 export default { 
     signUp,
     checkSession,
     logout,
     login,
-    alma
 }

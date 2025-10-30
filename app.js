@@ -9,11 +9,13 @@ import csrf  from 'csurf'
 import Connection from "./models/database-connection.model.js"
 import MySQLStoreImport from "express-mysql-session";
 import auth from "./routes/auth.router.js"; 
+import SessionController from "./controllers/session.controller.js";
 
 dotenv.config({path:'./environment/database.environment.env'})
 const MySQLStore = MySQLStoreImport(session);
 const app = express();
 const csrfProtection = csrf()
+const HOUR =  1000 * 60 * 60;
 const sessionStore = new MySQLStore({
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT),
@@ -22,7 +24,7 @@ const sessionStore = new MySQLStore({
   database: process.env.DB_NAME,
   createDatabaseTable: true, 
   clearExpired: true,
-  checkExpirationInterval: 1000* 60 *5
+  checkExpirationInterval: HOUR * 0.25
 });
 
 app.use(cors({
@@ -31,7 +33,6 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json());
-//app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(cookieParser()); 
 
@@ -40,9 +41,10 @@ app.use(session({
   secret: 'secret-key',
   store: sessionStore,
   resave: false,
+  rolling:false,
   saveUninitialized: false,
     cookie: {
-    maxAge: 1000*60 *60* 24,
+    maxAge: HOUR * 48,
     httpOnly:true,
     secure:false,
     sameSite:'lax'
@@ -51,7 +53,9 @@ app.use(session({
 
 app.use(csrfProtection)
 
-app.get('/csrf-token', (req, res) => {
+app.use(SessionController.logoutIfExpired)
+
+app.get('/csrf-token', SessionController.heartBeat, (req, res) => {
   //console.log(req.session)
   res.json({ csrfToken: req.csrfToken()});
 

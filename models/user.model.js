@@ -4,10 +4,10 @@ import { DataTypes } from "sequelize";
 
 const User = Connection.define('User', {
     userId:{
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull:false,
         primaryKey:true,
-        autoIncrement:true,
+        unique:true
     },
 
     email: {
