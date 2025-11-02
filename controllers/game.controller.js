@@ -3,11 +3,10 @@
     board: string[][],
     markup: 'x' | 'o',
     hardness: 'very-easy' | 'easy' | 'medium' | 'hard',
-    // startX?: number,
-    // startY?: number,
-    // endX?: number,
-    // endY?: number,
-    lastMove?: { xCoordinate: number, yCoordinate: number },
-
+    // startRow?: number,
+    // startColumn?: number,
+    // endRow?: number,
+    // endColumn?: number,
+    lastMove?: { row: number, column: number },
 }
 */

@@ -1,4 +1,4 @@
-export function getNextMarkup(board) {
+function getNextMarkup(board) {
   let x = 0;
   let o = 0;
 
@@ -13,12 +13,18 @@ export function getNextMarkup(board) {
   return x > o ? 'o' : 'x';
 }
 
-export function isEmptyField(board, row, col) {
+function isBoardEmpty(board) {
+  if (!Array.isArray(board) || board.length === 0)
+    throw new Error("Invalid board: must be a non-empty 2D array");
+  
+  return board.every(row => row.every(cell => cell === ''));
+}
+
+function isEmptyField(board, row, col) {
   return board[row][col] === '';
 }
 
-export function isBoardFull(board) {
-
+function isBoardFull(board) {
   for (const row of board) {
     for (const cell of row) {
       if (cell === '') return false;
@@ -27,7 +33,7 @@ export function isBoardFull(board) {
   return true;
 }
 
-export function getAvailableMoves(board) {
+function getAvailableMoves(board) {
   const moves = [];
   board.forEach((row, i) => {
     row.forEach((cell, j) => {
@@ -37,90 +43,58 @@ export function getAvailableMoves(board) {
   return moves;
 }
 
-export function extractUsedRegion(board) {
-  const result = {
-    startX: Infinity,
-    endX: -Infinity,
-    startY: Infinity,
-    endY: -Infinity,
-  };
 
-  const boardSize = board.length;
 
-  for (let i = 0; i < boardSize; i++) {
-    for (let j = 0; j < board[i].length; j++) {
-      const cell = board[i][j];
-      if (cell === '') continue;
-
-      if (i < result.startY) result.startY = i;
-      if (i > result.endY) result.endY = i;
-      if (j < result.startX) result.startX = j;
-      if (j > result.endX) result.endX = j;
-    }
-  }
+function forEachCellInRegion(board, region, callback) {
+  const { startColumn, endColumn, startRow, endRow } = region;
 
   if (
-    result.startX === Infinity ||
-    result.startY === Infinity ||
-    result.endX === -Infinity ||
-    result.endY === -Infinity
+    startColumn === undefined || endColumn === undefined ||
+    startRow === undefined || endRow === undefined
   ) {
-    return null;
+    throw new Error('Invalid region object — must contain startColumn, endColumn, startRow, endRow');
   }
 
-  return result;
-}
+  if (startColumn > endColumn || startRow > endRow) return;
 
-export function forEachCellInRegion(board, region, callback) {
-  const { startX, endX, startY, endY } = region;
-
-  if (
-    startX === undefined || endX === undefined ||
-    startY === undefined || endY === undefined
-  ) {
-    throw new Error('Invalid region object — must contain startX, endX, startY, endY');
-  }
-
-  if (startX > endX || startY > endY) return;
-
-  for (let row = startY; row <= endY; row++) {
-    for (let col = startX; col <= endX; col++) {
+  for (let row = startRow; row <= endRow; row++) {
+    for (let col = startColumn; col <= endColumn; col++) {
       callback(board[row][col], row, col);
     }
   }
 }
 
-export function getWinner(board, region = null, winLength = 3) {
+function getWinner(board, region = null, winLength = 3) {
   const boardSize = board.length;
 
-   if (!region) {
+  if (!region) {
     region = {
-      startX: 0,
-      startY: 0,
-      endX: boardSize - 1,
-      endY: boardSize - 1
+      startColumn: 0,
+      startRow: 0,
+      endColumn: boardSize - 1,
+      endRow: boardSize - 1
     };
   }
 
-  const { startX, startY, endX, endY } = region;
+  const { startColumn, startRow, endColumn, endRow } = region;
 
   if (
-    startX === undefined || endX === undefined ||
-    startY === undefined || endY === undefined
+    startColumn === undefined || endColumn === undefined ||
+    startRow === undefined || endRow === undefined
   ) {
-    throw new Error('Invalid region object — must contain startX, endX, startY, endY');
+    throw new Error('Invalid region object — must contain startColumn, endColumn, startRow, endRow');
   }
 
-  const width = endX - startX + 1;
-  const height = endY - startY + 1;
+  const width = endColumn - startColumn + 1;
+  const height = endRow - startRow + 1;
 
   if (width < winLength || height < winLength) return null;
 
   const directions = [
-    [0, 1],  
-    [1, 0],   
-    [1, 1],   
-    [1, -1]  
+    [0, 1],
+    [1, 0],
+    [1, 1],
+    [1, -1]
   ];
 
   let winner = null;
@@ -136,8 +110,8 @@ export function getWinner(board, region = null, winLength = 3) {
         const newCol = col + dirY * step;
 
         if (
-          newRow < startY || newRow > endY ||
-          newCol < startX || newCol > endX
+          newRow < startRow || newRow > endRow ||
+          newCol < startColumn || newCol > endColumn
         ) break;
 
         if (board[newRow][newCol] === cell) matchCount++;
@@ -156,8 +130,8 @@ export function getWinner(board, region = null, winLength = 3) {
   return null;
 }
 
-function startCheck(board, markup, hardness, region, lastMove){
-    if (!Array.isArray(board) || !Array.isArray(board[0])) {
+function startCheck(board, markup, hardness, region, lastMove) {
+  if (!Array.isArray(board) || !Array.isArray(board[0])) {
     throw new TypeError('Invalid argument: "board" must be a 2D array.');
   }
 
@@ -173,24 +147,24 @@ function startCheck(board, markup, hardness, region, lastMove){
   const boardSize = board.length;
 
   if (region) {
-    const { startX, startY, endX, endY } = region;
+    const { startColumn, startRow, endColumn, endRow } = region;
     const validRegion =
-      [startX, startY, endX, endY].every(
+      [startColumn, startRow, endColumn, endRow].every(
         n => typeof n === 'number' && n >= 0 && n < boardSize
-      ) && startX <= endX && startY <= endY;
+      ) && startColumn <= endColumn && startRow <= endRow;
 
     if (!validRegion) throw new RangeError('Invalid region coordinates.');
   }
 
   if (lastMove) {
-    const { xCoordinate, yCoordinate } = lastMove;
+    const { column, row } = lastMove;
     if (
-      typeof xCoordinate !== 'number' ||
-      typeof yCoordinate !== 'number' ||
-      xCoordinate < 0 ||
-      yCoordinate < 0 ||
-      xCoordinate >= boardSize ||
-      yCoordinate >= boardSize
+      typeof column !== 'number' ||
+      typeof row !== 'number' ||
+      column < 0 ||
+      row < 0 ||
+      column >= boardSize ||
+      row >= boardSize
     ) {
       throw new RangeError('Invalid "lastMove" coordinates.');
     }
@@ -202,13 +176,130 @@ function startCheck(board, markup, hardness, region, lastMove){
   }
 }
 
+function randomStart(board) {
+  if (!Array.isArray(board) || board.length === 0)
+    throw new Error("Board must be a non-empty 2D array");
+
+  const size = board.length;
+  if (!isBoardEmpty(board))
+    throw new Error("Board already contains at least one markup");
+
+  const center = (size - 1) / 2;
+
+  const roundRow = Math.random() < 0.5 ? Math.floor : Math.ceil;
+  const roundColumn = Math.random() < 0.5 ? Math.floor : Math.ceil;
+
+  const row = roundRow(center);
+  const column = roundColumn(center);
+
+  return { row, column };
+}
+
+function extractUsedRegion(board) {
+  const result = {
+    startColumn: Infinity,
+    endColumn: -Infinity,
+    startRow: Infinity,
+    endRow: -Infinity,
+  };
+
+  const boardSize = board.length;
+
+  for (let i = 0; i < boardSize; i++) {
+    for (let j = 0; j < board[i].length; j++) {
+      const cell = board[i][j];
+      if (cell === '') continue;
+
+      if (i < result.startRow) result.startRow = i;
+      if (i > result.endRow) result.endRow = i;
+      if (j < result.startColumn) result.startColumn = j;
+      if (j > result.endColumn) result.endColumn = j;
+    }
+  }
+
+  if (
+    result.startColumn === Infinity ||
+    result.startRow === Infinity ||
+    result.endColumn === -Infinity ||
+    result.endRow === -Infinity
+  ) {
+    return null;
+  }
+
+  return result;
+}
+
+function expandRegion(region, boardSize, padding = 1) {
+  if (
+    !region ||
+    typeof region.startColumn !== 'number' ||
+    typeof region.endColumn !== 'number' ||
+    typeof region.startRow !== 'number' ||
+    typeof region.endRow !== 'number'
+  ) {
+    throw new TypeError('Invalid region object — must contain numeric startColumn, endColumn, startRow, endRow');
+  }
+
+  if (typeof boardSize !== 'number' || boardSize <= 0)
+    throw new TypeError('Invalid boardSize: must be a positive number');
+
+  const expanded = {
+    startColumn: Math.max(0, region.startColumn - padding),
+    startRow: Math.max(0, region.startRow - padding),
+    endColumn: Math.min(boardSize - 1, region.endColumn + padding),
+    endRow: Math.min(boardSize - 1, region.endRow + padding),
+  };
+
+  return expanded;
+}
+
+function sliceRegion(board, region) {
+  const { startRow, endRow, startColumn, endColumn } = region;
+  const subBoard = [];
+
+  for (let row = startRow; row <= endRow; row++) {
+    const subRow = [];
+    for (let col = startColumn; col <= endColumn; col++) {
+      subRow.push(board[row][col]);
+    }
+    subBoard.push(subRow);
+  }
+
+  return subBoard;
+}
+
+function pasteRegion(board, region, subBoard) {
+  const { startRow, startColumn, endRow, endColumn } = region;
+
+  if (subBoard.length !== (endRow - startRow + 1))
+    throw new Error('subBoard row count does not match region height');
+
+  for (let i = 0; i < subBoard.length; i++) {
+    const row = startRow + i;
+
+    if (subBoard[i].length !== (endColumn - startColumn + 1))
+      throw new Error('subBoard column count does not match region width');
+
+    for (let j = 0; j < subBoard[i].length; j++) {
+      const col = startColumn + j;
+      board[row][col] = subBoard[i][j];
+    }
+  }
+
+}
+
 export default {
   getNextMarkup,
-  getAvailableMoves,
+  isBoardEmpty,
   isEmptyField,
   isBoardFull,
+  getAvailableMoves,
   extractUsedRegion,
   forEachCellInRegion,
   getWinner,
-  startCheck
-}
+  startCheck,
+  randomStart,
+  expandRegion,
+  sliceRegion,
+  pasteRegion,
+};

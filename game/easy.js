@@ -1,22 +1,45 @@
 import helperFunctions from "./helper.function";
 
-function easyMove(board, lastMove) {
-  const availableMoves = helperFunctions.getAvailableMoves(board);
+function easyMove(board, region = null, lastMove = null, hardness = 'easy') {
+    if (helperFunctions.isBoardFull(board))
+        throw new Error('No available moves');
 
-  if (availableMoves.length === 0)
-    throw new Error('No available moves');
+    let actualRegion = region ? region : helperFunctions.extractUsedRegion(board);
+    let usedBoardPart = actualRegion ? helperFunctions.sliceRegion(board, actualRegion) : board;
 
-  if (!lastMove)
-    return veryEasyMove(board);
+    const markup = helperFunctions.getNextMarkup(board);
 
-  const { xCoordinate, yCoordinate } = lastMove;
-  const neighbors = availableMoves.filter(([x, y]) => (
-    Math.abs(x - xCoordinate) <= 1 && Math.abs(y - yCoordinate) <= 1
-  ));
+    let availableMoves = helperFunctions.getAvailableMoves(usedBoardPart);
 
-  const moves = neighbors.length > 0 ? neighbors : availableMoves;
-  const randomIndex = Math.floor(Math.random() * moves.length);
-  const [x, y] = moves[randomIndex];
+    if (lastMove) {
+        const { row, column } = lastMove;
+        const neighbors = availableMoves.filter(([r, c]) => 
+            Math.abs(r - row) <= 1 && Math.abs(c - column) <= 1
+        );
+        availableMoves = neighbors.length > 0 ? neighbors : availableMoves;
+    }
 
-  return { x, y };
+    if (actualRegion) {
+        while (!availableMoves.length) {
+            actualRegion = helperFunctions.expandRegion(actualRegion, board.length);
+            usedBoardPart = helperFunctions.sliceRegion(board, actualRegion);
+            availableMoves = helperFunctions.getAvailableMoves(usedBoardPart);
+        }
+    }
+
+    const randomIndex = Math.floor(Math.random() * availableMoves.length);
+    const [row, column] = availableMoves[randomIndex];
+
+    usedBoardPart[row][column] = markup;
+    const resultBoard = helperFunctions.pasteRegion(board, actualRegion, usedBoardPart);
+
+    return {
+        board: resultBoard,
+        hardness: hardness,
+        lastMove: { row, column },
+        startRow: actualRegion?.startRow,
+        startColumn: actualRegion?.startColumn,
+        endRow: actualRegion?.endRow,
+        endColumn: actualRegion?.endColumn
+    };
 }
