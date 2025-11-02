@@ -14,4 +14,6 @@ router.post('/signup', SignupValidator, SessionController.heartBeat, AuthControl
 
 router.post('/logout', AuthController.logout);
 
+router.post('/is-used-email', AuthController.isUsedEmail)
+
 export default router;

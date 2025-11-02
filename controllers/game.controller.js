@@ -1,11 +1,13 @@
 /* 
 {
     board: string[][],
-    size:number,
-    step:number,
     markup: 'x' | 'o',
     hardness: 'very-easy' | 'easy' | 'medium' | 'hard',
-    lastMove?: {xCoordinate : number , yCoordinate:number},
-    winner: 'x' | 'o' | 'draw' | null
+    // startX?: number,
+    // startY?: number,
+    // endX?: number,
+    // endY?: number,
+    lastMove?: { xCoordinate: number, yCoordinate: number },
+
 }
 */

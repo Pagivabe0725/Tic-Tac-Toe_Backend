@@ -81,6 +81,21 @@ const logout = (req, res, next) => {
   
     res.status(200).json({message: 'logout was success'})
 };
+
+
+const isUsedEmail = async (req, res, next ) =>{
+
+  const {email} = req.body
+
+  if(!email){
+    const error = new Error('Email is undefined!')
+    return next(error)
+  }
+
+  const result = await DATABASE.isUsedEmail(email)
+  res.status(200).json({result: result})
+
+}
   
 
 export default { 
@@ -88,4 +103,5 @@ export default {
     checkSession,
     logout,
     login,
+    isUsedEmail,
 }

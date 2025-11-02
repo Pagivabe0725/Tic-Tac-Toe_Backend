@@ -25,7 +25,7 @@ async function isUsedEmail(email){
 
 async function isExistUser(userId){
     
-    if(typeof userId !== 'number'){
+    if(typeof userId !== 'string'){
         throw new Error('Parameter with bad type')
     }
     const actualUser = await User.findOne({where: {userId: userId}})
@@ -35,7 +35,7 @@ async function isExistUser(userId){
 
 async function getUserByidentifier(userId){
 
-    if(typeof userId !== 'number'){
+    if(typeof userId !== 'string'){
         throw new Error('Parameter with bad type')
     }
 
