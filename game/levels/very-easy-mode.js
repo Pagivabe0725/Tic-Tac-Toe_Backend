@@ -1,4 +1,4 @@
-import helperFunctions from "../helper.function";
+import helperFunctions from "../helper.function.js";
 
 function veryEasyMove(board) {
     if (helperFunctions.isBoardFull(board))
@@ -13,6 +13,8 @@ function veryEasyMove(board) {
     const newBoard = board.map(r => [...r]);
     newBoard[row][column] = markup;
 
+
+    console.log('very-easy')
     return {
         board: newBoard,
         lastMove: { row, column }

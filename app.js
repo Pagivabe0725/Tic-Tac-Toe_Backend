@@ -9,6 +9,7 @@ import csrf  from 'csurf'
 import Connection from "./models/database-connection.model.js"
 import MySQLStoreImport from "express-mysql-session";
 import auth from "./routes/auth.router.js"; 
+import game from "./routes/game.router.js";
 import SessionController from "./controllers/session.controller.js";
 
 dotenv.config({path:'./environment/database.environment.env'})
@@ -62,6 +63,7 @@ app.get('/csrf-token', SessionController.heartBeat, (req, res) => {
 });
 
 app.use('/users', auth);
+app.use('/game', game);
 
 app.use((error, req, res, next)=>{
   console.log(error)

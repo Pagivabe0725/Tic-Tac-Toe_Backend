@@ -286,17 +286,110 @@ function pasteRegion(board, region, subBoard) {
     }
   }
 
+
+
 }
+
+function getWinLength(board) {
+    switch (board.length) {
+        case 3:
+            return 3;
+        case 4:
+            return 3; 
+        case 5:
+        case 6:
+            return 4;
+        case 7:
+            return 4; 
+        case 8:
+        case 9:
+            return 5;
+        default:
+            throw new Error("Board size not supported. Use 3 to 9.");
+    }
+}
+
+
+/**
+ * Expands a region outward in any direction where a non-empty mark ('x' or 'o')
+ * is found along the region's border. Expansion only occurs if there is space
+ * left on the board in that direction.
+ *
+ * @function expandRegionIfEdgeHasMark
+ * @param {string[][]} board - The full game board.
+ * @param {{
+ *   startRow: number,
+ *   endRow: number,
+ *   startColumn: number,
+ *   endColumn: number
+ * }} region - The current region to check and potentially expand.
+ * @returns {{
+ *   startRow: number,
+ *   endRow: number,
+ *   startColumn: number,
+ *   endColumn: number
+ * }} The possibly expanded region.
+ *
+ * @example
+ * const region = { startRow: 2, endRow: 4, startColumn: 2, endColumn: 4 };
+ * const newRegion = expandRegionIfEdgeHasMark(board, region);
+ * console.log(newRegion);
+ */
+function expandRegionIfEdgeHasMark(board, region) {
+  const { startRow, endRow, startColumn, endColumn } = region;
+  const numRows = board.length;
+  const numCols = board[0].length;
+
+  // Create a shallow copy of the region so we can modify it safely
+  const newRegion = { ...region };
+
+  // --- Check top edge ---
+  for (let col = startColumn; col <= endColumn; col++) {
+    if (board[startRow][col] !== '' && startRow > 0) {
+      newRegion.startRow = startRow - 1;
+      break;
+    }
+  }
+
+  // --- Check bottom edge ---
+  for (let col = startColumn; col <= endColumn; col++) {
+    if (board[endRow][col] !== '' && endRow < numRows - 1) {
+      newRegion.endRow = endRow + 1;
+      break;
+    }
+  }
+
+  // --- Check left edge ---
+  for (let row = startRow; row <= endRow; row++) {
+    if (board[row][startColumn] !== '' && startColumn > 0) {
+      newRegion.startColumn = startColumn - 1;
+      break;
+    }
+  }
+
+  // --- Check right edge ---
+  for (let row = startRow; row <= endRow; row++) {
+    if (board[row][endColumn] !== '' && endColumn < numCols - 1) {
+      newRegion.endColumn = endColumn + 1;
+      break;
+    }
+  }
+
+  return newRegion;
+}
+
 
 export default {
   getNextMarkup,
   isBoardEmpty,
   isEmptyField,
   isBoardFull,
+  getWinLength,
+  getWinner,
   getAvailableMoves,
+  expandRegionIfEdgeHasMark,
   extractUsedRegion,
   forEachCellInRegion,
-  getWinner,
   startCheck,
   randomStart,
   expandRegion,

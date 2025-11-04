@@ -1,4 +1,4 @@
-import helperFunctions from './helper.function';
+import helperFunctions from '../helper.function.js';
 
 /**
  * Checks whether a given cell is in the central region of the board.
@@ -48,10 +48,17 @@ function isNearOwnMark(board, row, column, markup) {
  * @param {string} markup - The mark to place ('x' or 'o').
  * @returns {boolean} True if placing the mark here results in a win.
  */
-function wouldWinAfterMove(board, row, column, markup) {
+function wouldWinAfterMove(board, row, column, markup, winLength = 3) {
   const boardClone = board.map(boardRow => [...boardRow]);
   boardClone[row][column] = markup;
-  return helperFunctions.getWinner(boardClone) === markup;
+  return helperFunctions.getWinner(boardClone, null, winLength) === markup;
+}
+
+
+function opponentAlmostWin(board , row, column , markup, winLength ){
+  const boardClone = board.map(boardRow => [...boardRow])
+  boardClone[row][column] = markup
+  return helperFunctions.getWinner(boardClone, null, winLength-1) === markup
 }
 
 /**
@@ -62,7 +69,7 @@ function wouldWinAfterMove(board, row, column, markup) {
  * @param {{row: number, column: number}} lastMove - The last move made on the board.
  * @returns {{board: string[][], lastMove: {row: number, column: number}}} The new board and the AI's move.
  */
-function mediumMove(board, lastMove) {
+function mediumMove(board, lastMove, winLength) {
   const currentMarkup = helperFunctions.getNextMarkup(board);
   const opponentMarkup = currentMarkup === 'x' ? 'o' : 'x';
   const availableMoves = helperFunctions.getAvailableMoves(board);
@@ -71,13 +78,17 @@ function mediumMove(board, lastMove) {
     let score = 0;
 
     // 1. Winning opportunity for AI
-    if (wouldWinAfterMove(board, row, column, currentMarkup)) {
+    if (wouldWinAfterMove(board, row, column, currentMarkup, winLength)) {
       score += 100;
     }
 
     // 2. Block opponent's winning move
-    if (wouldWinAfterMove(board, row, column, opponentMarkup)) {
+    if (wouldWinAfterMove(board, row, column, opponentMarkup , winLength)) {
       score += 90;
+    }
+
+    if(opponentAlmostWin(board, row, column, opponentMarkup, winLength)){
+      score+=80
     }
 
     // 3. Prefer central cells
@@ -115,10 +126,12 @@ function mediumMove(board, lastMove) {
   const newBoard = board.map(boardRow => [...boardRow]);
   newBoard[chosenMove.row][chosenMove.column] = currentMarkup;
 
+
+  console.log('medium')
   return {
     board: newBoard,
     lastMove: { row: chosenMove.row, column: chosenMove.column },
   };
 }
 
-export { isCentralCell, isNearOwnMark, wouldWinAfterMove, mediumMove };
+export default mediumMove;

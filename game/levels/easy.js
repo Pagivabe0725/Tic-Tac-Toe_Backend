@@ -1,4 +1,4 @@
-import helperFunctions from "../helper.function";
+import helperFunctions from "../helper.function.js";
 
 function easyMove(board, lastMove = null) {
     if (helperFunctions.isBoardFull(board))
@@ -21,8 +21,12 @@ function easyMove(board, lastMove = null) {
     const newBoard = board.map(r => [...r]);
     newBoard[row][column] = markup;
 
+    console.log('easy')
+
     return {
         board: newBoard,
         lastMove: { row, column },
     };
 }
+
+export default easyMove
