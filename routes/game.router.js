@@ -1,24 +1,10 @@
 import express from 'express'
-import aiMove from '../game/game.js'
-
+import gameController from '../controllers/game.controller.js'
 
 const router = express.Router()
 
-router.post('/ai-move', (req, res, next)=>{
+router.post('/ai-move', gameController.aiMoveController)
 
-    console.log('Bennevan')
-    const {board, lastMove, markup, hardness} = req.body
-    let result 
-    try {
-
-        result = aiMove(board,markup,hardness,lastMove || null )
-        console.log(result)
-        res.status(200).send(result)
-    }
-    catch(error){
-        next(error)
-    }
-
-})
+router.post('/check-board',gameController.checkWinner)
 
 export default router

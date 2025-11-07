@@ -2,20 +2,20 @@ import DATABASE from '../database/database.js'
 
 const signUp = async (req, res, next) => {
   const body = req.body;
-  let newUser
-  if(body.email && body.password){
-      try {
-          newUser = await DATABASE.userCreator(body.email, body.password);
-          res.status(201).json({ userId: newUser.id });
-      } catch (error) {
-          error.statusCode = 400
-          next(error)
-      }
-  } else {
-      error.statusCode = 400
-      next(error)
+
+  if (!body.email || !body.password) {
+    return res.status(400).json({ message: 'Missing email or password' });
   }
-}
+
+  try {
+    const newUser = await DATABASE.userCreator(body.email, body.password);
+    return res.status(201).json({ userId: newUser.dataValues.userId });
+  } catch (error) {
+    error.statusCode = 400;
+    return next(error);
+  }
+};
+
 
 const checkSession = async (req, res, next) => {
 
@@ -27,7 +27,8 @@ const checkSession = async (req, res, next) => {
 
   try {
     const user = await DATABASE.getUserByidentifier(req.session.userId);
-    return res.json({ user: user });
+    const {password,...result} = user.dataValues
+    return res.json({ user: result });
   }
   catch(error){
     if(!error.statusCode){

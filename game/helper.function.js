@@ -1,4 +1,4 @@
-function getNextMarkup(board) {
+const  getNextMarkup = (board) => {
   let x = 0;
   let o = 0;
 
@@ -13,18 +13,18 @@ function getNextMarkup(board) {
   return x > o ? 'o' : 'x';
 }
 
-function isBoardEmpty(board) {
+const isBoardEmpty = (board) => {
   if (!Array.isArray(board) || board.length === 0)
     throw new Error("Invalid board: must be a non-empty 2D array");
   
   return board.every(row => row.every(cell => cell === ''));
 }
 
-function isEmptyField(board, row, col) {
+const isEmptyField = (board, row, col) => {
   return board[row][col] === '';
 }
 
-function isBoardFull(board) {
+const isBoardFull = (board) => {
   for (const row of board) {
     for (const cell of row) {
       if (cell === '') return false;
@@ -33,7 +33,7 @@ function isBoardFull(board) {
   return true;
 }
 
-function getAvailableMoves(board) {
+const getAvailableMoves = (board) => {
   const moves = [];
   board.forEach((row, i) => {
     row.forEach((cell, j) => {
@@ -45,7 +45,7 @@ function getAvailableMoves(board) {
 
 
 
-function forEachCellInRegion(board, region, callback) {
+const forEachCellInRegion = (board, region, callback) => {
   const { startColumn, endColumn, startRow, endRow } = region;
 
   if (
@@ -64,7 +64,7 @@ function forEachCellInRegion(board, region, callback) {
   }
 }
 
-function getWinner(board, region = null, winLength = 3) {
+const getWinner = (board, region = null, winLength = 3) => {
   const boardSize = board.length;
 
   if (!region) {
@@ -130,7 +130,7 @@ function getWinner(board, region = null, winLength = 3) {
   return null;
 }
 
-function startCheck(board, markup, hardness, region, lastMove) {
+const startCheck = (board, markup, hardness, region, lastMove) => {
   if (!Array.isArray(board) || !Array.isArray(board[0])) {
     throw new TypeError('Invalid argument: "board" must be a 2D array.');
   }
@@ -176,7 +176,7 @@ function startCheck(board, markup, hardness, region, lastMove) {
   }
 }
 
-function randomStart(board) {
+const randomStart = (board) => {
   if (!Array.isArray(board) || board.length === 0)
     throw new Error("Board must be a non-empty 2D array");
 
@@ -195,7 +195,7 @@ function randomStart(board) {
   return { row, column };
 }
 
-function extractUsedRegion(board) {
+const extractUsedRegion = (board) => {
   const result = {
     startColumn: Infinity,
     endColumn: -Infinity,
@@ -229,7 +229,7 @@ function extractUsedRegion(board) {
   return result;
 }
 
-function expandRegion(region, boardSize, padding = 1) {
+const expandRegion = (region, boardSize, padding = 1) => {
   if (
     !region ||
     typeof region.startColumn !== 'number' ||
@@ -253,7 +253,7 @@ function expandRegion(region, boardSize, padding = 1) {
   return expanded;
 }
 
-function sliceRegion(board, region) {
+const sliceRegion = (board, region) => {
   const { startRow, endRow, startColumn, endColumn } = region;
   const subBoard = [];
 
@@ -268,7 +268,7 @@ function sliceRegion(board, region) {
   return subBoard;
 }
 
-function pasteRegion(board, region, subBoard) {
+const pasteRegion = (board, region, subBoard) => {
   const { startRow, startColumn, endRow, endColumn } = region;
 
   if (subBoard.length !== (endRow - startRow + 1))
@@ -290,7 +290,7 @@ function pasteRegion(board, region, subBoard) {
 
 }
 
-function getWinLength(board) {
+const getWinLength = (board) => {
     switch (board.length) {
         case 3:
             return 3;
@@ -335,7 +335,7 @@ function getWinLength(board) {
  * const newRegion = expandRegionIfEdgeHasMark(board, region);
  * console.log(newRegion);
  */
-function expandRegionIfEdgeHasMark(board, region) {
+const expandRegionIfEdgeHasMark = (board, region) => {
   const { startRow, endRow, startColumn, endColumn } = region;
   const numRows = board.length;
   const numCols = board[0].length;

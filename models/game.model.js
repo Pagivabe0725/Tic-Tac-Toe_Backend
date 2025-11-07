@@ -9,16 +9,16 @@ const Game = Connection.define('Game', {
         primaryKey: true,
     },
 
-    step:{
-        type: DataTypes.INTEGER,
-        defaultValue: 0,
-        allowNull: false
-    },
-
     board: {
         type: DataTypes.JSON,
         allowNull: false,
         defaultValue: [[]] 
+    },
+
+    lastMove: {
+        type: DataTypes.JSON, 
+        allowNull: true, 
+        defaultValue: null 
     },
 
     status: {
