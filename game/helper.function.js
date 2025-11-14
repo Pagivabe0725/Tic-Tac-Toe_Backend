@@ -171,7 +171,7 @@ const startCheck = (board, markup, hardness, region, lastMove) => {
   }
 
   const availableMoves = getAvailableMoves(board);
-  if (availableMoves.length === 0) {
+  if (availableMoves.length === 0 && !getWinner(board,null,getWinLength(board))) {
     throw new Error('No available moves — board is full.');
   }
 }
