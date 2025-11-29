@@ -61,7 +61,7 @@ app.use(
 app.use("/graphql", graphqlRouter);
 
 
-//app.use(csrfProtection);
+app.use(csrfProtection);
 
 app.use(SessionController.logoutIfExpired);
 

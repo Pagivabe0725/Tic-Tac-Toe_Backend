@@ -70,8 +70,9 @@ const login = async (req, res, next) => {
 
       req.session.userId = user.userId;
       req.session.userExpire = Date.now() + 1000 * 60 * 60 * 48;
+      const { password: _, ...resultUser } = user.dataValues;
 
-      return res.status(200).json({ user: user });
+      return res.status(200).json({ ...resultUser });
    } catch (error) {
       if (!error.statusCode) {
          error.statusCode = 500;
@@ -129,9 +130,27 @@ const updateUser = async (req, res, next) => {
       if (!updatedUser) {
          throw new Error("Empty updatedUser object");
       }
+
       res.status(200).json({ user: updatedUser?.dataValues ?? updatedUser });
    } catch (error) {
       return next(error);
+   }
+};
+
+const getUserByidentifier = async(req, res, next) => {
+   const { userId } = req.body;
+   try {
+      const user = await DATABASE.getUserByidentifier(userId);
+
+      if (!user) {
+         throw new Error("Empty user object");
+      }
+
+      const {password, ...resultUser} = user.dataValues 
+
+      res.status(200).json({ ...resultUser });
+   } catch (error) {
+      next(error);
    }
 };
 
@@ -142,4 +161,5 @@ export default {
    login,
    isUsedEmail,
    updateUser,
+   getUserByidentifier,
 };

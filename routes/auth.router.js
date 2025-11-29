@@ -48,13 +48,13 @@ router.post("/login", LoginValidator, SessionController.heartBeat, AuthControlle
  * POST /signup
  * Register a new user.
  * Validates input, refreshes session, then creates the user account.
- * 
+ *
  * Request body:
  *  { email: string, password: string }
- * 
+ *
  * Response:
  *  { userId: string }
- * 
+ *
  */
 router.post(
    "/signup",
@@ -107,6 +107,19 @@ router.post("/is-used-email", AuthController.isUsedEmail);
  *  { user: { userId, email, winNumber, loseNumber, createdAt, updatedAt } }
  *
  */
-router.post("/update-user", AuthController.updateUser);
+router.patch("/update-user", AuthController.updateUser);
+
+/**
+ * POST /get-user-by-identifier
+ * Retrieve a user by a unique identifier (e.g., userId or email).
+ * Typically used for internal lookups or verification.
+ *
+ * Request body:
+ *  { identifier: string }  // The unique identifier of the user
+ *
+ * Response:
+ *  { user: { userId, email, winNumber, loseNumber, createdAt, updatedAt } }
+ */
+router.post("/get-user-by-identifier", AuthController.getUserByidentifier);
 
 export default router;

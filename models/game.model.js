@@ -30,9 +30,28 @@ const Game = Connection.define("Game", {
 
    // Current status of the game (not started, in progress, won, lost, draw)
    status: {
-      type: DataTypes.ENUM("NOT_STARTED", "IN_PROGRESS", "WON", "LOST", "DRAW"),
+      type: DataTypes.ENUM("not_started", "in_progress", "won", "lost", "draw"),
       defaultValue: "not_started",
       allowNull: false,
+   },
+
+   difficulty: {
+      type: DataTypes.ENUM("very-easy", "easy", "medium", "hard"),
+      allowNull: false,
+   },
+
+   opponent: {
+      type: DataTypes.ENUM("player", "computer"),
+      allowNull: false,
+   },
+
+   size: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      validate: {
+         min: 3,
+         max: 9,
+      },
    },
 
    // Foreign key to the User who owns this game

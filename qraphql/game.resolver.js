@@ -13,10 +13,11 @@ import helperFunction from "../game/helper.function.js";
  * @throws Will throw an error if creation fails
  */
 const createGame = async (args) => {
-   const { userId, board, lastMove, status } = args;
-
+   const { userId, board, lastMove, status, difficulty, opponent, size } = args;
+   console.log('CREATEGAME')
+   console.log(userId, board, lastMove, status, difficulty, opponent, size)
    try {
-      const game = await DATABASE.gameCreator(userId, board, lastMove, status);
+      const game = await DATABASE.gameCreator(userId, board, lastMove, status, difficulty, opponent, size );
       return game?.dataValues ?? game;
    } catch (error) {
       throw new Error(error.message || "Unknown error while creating game");
@@ -89,9 +90,9 @@ const deleteGame = async (args) => {
  * @throws Will throw an error if update fails
  */
 const updateGame = async (args) => {
-   const { gameId, status, board, lastMove } = args;
+   const { gameId, status, board, lastMove, difficulty, opponent, size } = args;
    try {
-      const game = await DATABASE.updateGame(gameId, lastMove, board, status);
+      const game = await DATABASE.updateGame(gameId, lastMove, board, status, difficulty, opponent, size);
       return game;
    } catch (error) {
       throw new Error(error.message || "Unknown error while updating game");
@@ -139,13 +140,13 @@ const checkBoard = (args) => {
  * Maps GraphQL queries and mutations to the corresponding functions.
  */
 const gameResolvers = {
-   createGame_graphql: createGame,
-   getGameById_graphql: getGameByGameId,
-   getGamesByUserId_graphql: getGamesByUserId,
-   deleteGame_graphql: deleteGame,
-   updateGame_graphql: updateGame,
-   aiMove_graphql: getAiMove,
-   checkBoard_graphql: checkBoard,
+   createGame: createGame,
+   game: getGameByGameId,
+   games: getGamesByUserId,
+   deleteGame: deleteGame,
+   updateGame: updateGame,
+   aiMove: getAiMove,
+   checkBoard: checkBoard,
 };
 
 export default gameResolvers;

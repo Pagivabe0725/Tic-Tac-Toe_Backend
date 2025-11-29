@@ -190,12 +190,12 @@ const logout = async (_, context) => {
  * Exported GraphQL resolvers
  */
 const userResolvers = {
-   getCsrfToken_graphql: csfrToken,
-   getUserById_graphql: getUserById,
-   login_graphql: login,
-   signup_graphql: signup,
-   updatedUser_graphql: updatedUser,
-   logout_graphql: logout,
+   csrfToken: csfrToken,
+   user: getUserById,
+   login: login,
+   signup: signup,
+   updatedUser: updatedUser,
+   logout: logout,
 };
 
 export default userResolvers;

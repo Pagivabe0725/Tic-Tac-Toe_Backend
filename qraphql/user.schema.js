@@ -10,6 +10,7 @@ const schema = buildSchema(`
     loseNumber: Int!
     createdAt: String!
     updatedAt: String!
+    game_count: Int!
   }
 
   type CsrfToken {
@@ -22,31 +23,31 @@ const schema = buildSchema(`
 
   # ---------- QUERIES ----------
   type RootQuery {
-    getUserById_graphql(id: ID!): User!
-    getCsrfToken_graphql: CsrfToken!
+    user(id: ID!): User!
+    csrfToken: CsrfToken!
   }
 
   # ---------- MUTATIONS ----------
   type RootMutation {
-    signup_graphql(
+    signup(
       email: String!
       password: String!
       confirmPassword: String!
     ): SignupResponse
 
-    login_graphql(
+    login(
       email: String!
       password: String!
     ): User
 
-    updatedUser_graphql(
+    updatedUser(
       userId: ID!
       email: String
       winNumber: Int
       loseNumber: Int
     ): User
 
-    logout_graphql: Boolean
+    logout: Boolean
   }
 
   # ---------- SCHEMA ----------

@@ -5,7 +5,7 @@ const gameSchema = buildSchema(`
   # ---------- ENUMS ----------
   enum GameStatus {
     not_started
-    in_progress
+    in_progress 
     won
     lost
     draw
@@ -27,6 +27,11 @@ const gameSchema = buildSchema(`
     easy
     medium
     hard
+  }
+
+  enum Opponent {
+    computer
+    player
   }
 
   # ---------- INPUT TYPES ----------
@@ -61,44 +66,53 @@ const gameSchema = buildSchema(`
     status: GameStatus!
     userId: ID!
     createdAt: String!
-    updatedAt: String
+    updatedAt: String!
     board: [[String!]!]
+    difficulty: Hardness!
+    opponent: Opponent!
+    size: Int!
   }
 
   # ---------- QUERIES ----------
   type RootQuery {
-    getGameById_graphql(gameId: ID!): Game!
-    getGamesByUserId_graphql(
+    game(gameId: ID!): Game!
+    games(
       userId: ID!
       page: Int!
       order: Order
     ): [Game]!
 
-    checkBoard_graphql(board:[[String!]!]):Winner
+    checkBoard(board:[[String!]!]):Winner
   }
 
   # ---------- MUTATIONS ----------
   type RootMutation {
-    createGame_graphql(
+    createGame(
       userId: ID!
       board: [[String!]!]!
       lastMove: LastMoveInput
-      status: GameStatus
+      status: GameStatus!
+      difficulty: Hardness!
+      opponent: Opponent!
+      size: Int!
     ): Game!
 
-    deleteGame_graphql(
+    deleteGame(
       gameId: ID!
       userId: ID!
     ): Game!
 
-    updateGame_graphql(
+    updateGame(
       gameId: ID!
       lastMove: LastMoveInput
       status: GameStatus
-      board: [[String!]!]!
+      board: [[String!]!]
+      difficulty: Hardness
+      opponent: Opponent
+      size: Int
     ): Game!
 
-    aiMove_graphql(
+    aiMove(
       board: [[String!]!]!
       lastMove: LastMoveInput
       markup: String
