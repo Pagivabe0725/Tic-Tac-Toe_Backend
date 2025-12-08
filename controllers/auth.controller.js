@@ -137,7 +137,11 @@ const updateUser = async (req, res, next) => {
    }
 };
 
-const getUserByidentifier = async(req, res, next) => {
+/**
+ * Retrieves a user by userId.
+ * Excludes the password field in the response.
+ */
+const getUserByidentifier = async (req, res, next) => {
    const { userId } = req.body;
    try {
       const user = await DATABASE.getUserByidentifier(userId);
@@ -146,9 +150,44 @@ const getUserByidentifier = async(req, res, next) => {
          throw new Error("Empty user object");
       }
 
-      const {password, ...resultUser} = user.dataValues 
+      const { password, ...resultUser } = user.dataValues;
 
       res.status(200).json({ ...resultUser });
+   } catch (error) {
+      next(error);
+   }
+};
+
+/**
+ * Checks if the provided password matches the user's current password.
+ * Returns a boolean indicating if the password is correct.
+ */
+const checkPassword = async (req, res, next) => {
+   const { userId, password } = req.body;
+   try {
+      const isEqual = await DATABASE.checkPassword(userId, password);
+      res.status(200).json({ isEqual });
+   } catch (error) {
+      next(error);
+   }
+};
+
+/**
+ * Updates a user's password.
+ * Validates the current password and matches newPassword with confirmPassword.
+ * Returns the updated user object on success.
+ */
+const updatePassword = async (req, res, next) => {
+   const { userId, password, newPassword, confirmPassword } = req.body;
+
+   try {
+      const updatedUser = await DATABASE.updatePassword(
+         userId,
+         password,
+         newPassword,
+         confirmPassword
+      );
+      res.status(200).json({ ...updatedUser });
    } catch (error) {
       next(error);
    }
@@ -162,4 +201,6 @@ export default {
    isUsedEmail,
    updateUser,
    getUserByidentifier,
+   checkPassword,
+   updatePassword,
 };

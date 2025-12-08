@@ -1,3 +1,10 @@
+/**
+ * Determine the next markup to place on the board based on counts.
+ * If the board is empty, `x` always goes first.
+ *
+ * @param {string[][]} board - A 2D array representing the game board.
+ * @returns {"x"|"o"} The markup that should be placed next.
+ */
 const getNextMarkup = (board) => {
    let x = 0;
    let o = 0;
@@ -13,6 +20,13 @@ const getNextMarkup = (board) => {
    return x > o ? "o" : "x";
 };
 
+/**
+ * Check whether the entire board is empty (all cells are the empty string).
+ *
+ * @param {string[][]} board - The game board (2D array).
+ * @throws {Error} If `board` is not a non-empty 2D array.
+ * @returns {boolean} True if every cell is the empty string, otherwise false.
+ */
 const isBoardEmpty = (board) => {
    if (!Array.isArray(board) || board.length === 0)
       throw new Error("Invalid board: must be a non-empty 2D array");
@@ -20,10 +34,24 @@ const isBoardEmpty = (board) => {
    return board.every((row) => row.every((cell) => cell === ""));
 };
 
+/**
+ * Check whether a specific cell is empty.
+ *
+ * @param {string[][]} board - The game board (2D array).
+ * @param {number} row - Row index of the cell.
+ * @param {number} col - Column index of the cell.
+ * @returns {boolean} True if the specified cell is empty string, otherwise false.
+ */
 const isEmptyField = (board, row, col) => {
    return board[row][col] === "";
 };
 
+/**
+ * Determine whether the board has no empty cells.
+ *
+ * @param {string[][]} board - The game board (2D array).
+ * @returns {boolean} True if there are no empty cells, otherwise false.
+ */
 const isBoardFull = (board) => {
    for (const row of board) {
       for (const cell of row) {
@@ -33,6 +61,12 @@ const isBoardFull = (board) => {
    return true;
 };
 
+/**
+ * Return a list of available moves as [row, column] pairs.
+ *
+ * @param {string[][]} board - The game board (2D array).
+ * @returns {Array.<number[]>} Array of `[row, col]` pairs for empty cells.
+ */
 const getAvailableMoves = (board) => {
    const moves = [];
    board.forEach((row, i) => {
@@ -43,6 +77,14 @@ const getAvailableMoves = (board) => {
    return moves;
 };
 
+/**
+ * Iterate over each cell in a rectangular region and call `callback`.
+ *
+ * @param {string[][]} board - The full game board.
+ * @param {{startColumn:number,endColumn:number,startRow:number,endRow:number}} region - Region bounds.
+ * @param {(cell:string,row:number,col:number)=>void} callback - Function called for each cell.
+ * @throws {Error} If `region` is missing required numeric properties.
+ */
 const forEachCellInRegion = (board, region, callback) => {
    const { startColumn, endColumn, startRow, endRow } = region;
 
@@ -66,6 +108,14 @@ const forEachCellInRegion = (board, region, callback) => {
    }
 };
 
+/**
+ * Determine the winner in the given board or region, respecting `winLength`.
+ *
+ * @param {string[][]} board - The full game board.
+ * @param {{startColumn:number,endColumn:number,startRow:number,endRow:number}|null} [region=null] - Optional region to check.
+ * @param {number} [winLength=3] - Number of identical marks in a row required to win.
+ * @returns {"x"|"o"|"draw"|null} Returns the winner mark, "draw", or null when game is ongoing.
+ */
 const getWinner = (board, region = null, winLength = 3) => {
    const boardSize = board.length;
 
@@ -139,6 +189,17 @@ const getWinner = (board, region = null, winLength = 3) => {
    return null;
 };
 
+/**
+ * Validate game state inputs before performing checks or AI moves.
+ * Throws detailed errors for invalid arguments.
+ *
+ * @param {string[][]} board - The game board (2D array).
+ * @param {"x"|"o"} markup - Current player's markup.
+ * @param {string} hardness - Difficulty string: one of 'very-easy','easy','medium','hard'.
+ * @param {{startColumn:number,endColumn:number,startRow:number,endRow:number}} [region] - Optional region to operate on.
+ * @param {{row:number,column:number}} [lastMove] - Optional last move coordinates.
+ * @throws {TypeError|RangeError|Error} When arguments are invalid or no moves available.
+ */
 const startCheck = (board, markup, hardness, region, lastMove) => {
    if (!Array.isArray(board) || !Array.isArray(board[0])) {
       throw new TypeError('Invalid argument: "board" must be a 2D array.');
@@ -189,6 +250,14 @@ const startCheck = (board, markup, hardness, region, lastMove) => {
    }
 };
 
+/**
+ * Choose a random starting position near the center for an empty board.
+ * Picks either floor or ceil of the center coordinate for both row/column.
+ *
+ * @param {string[][]} board - The game board (2D array).
+ * @throws {Error} If `board` is not a non-empty 2D array or is not empty.
+ * @returns {{row:number,column:number}} Chosen starting coordinates.
+ */
 const randomStart = (board) => {
    if (!Array.isArray(board) || board.length === 0)
       throw new Error("Board must be a non-empty 2D array");
@@ -208,6 +277,13 @@ const randomStart = (board) => {
    return { row, column };
 };
 
+/**
+ * Find the minimal rectangular region that contains all non-empty marks.
+ *
+ * @param {string[][]} board - The game board (2D array).
+ * @returns {{startColumn:number,endColumn:number,startRow:number,endRow:number}|null}
+ *   The bounds of the used region or `null` if the board is empty.
+ */
 const extractUsedRegion = (board) => {
    const result = {
       startColumn: Infinity,
@@ -242,6 +318,15 @@ const extractUsedRegion = (board) => {
    return result;
 };
 
+/**
+ * Expand a region by `padding` in all directions while clamping to board bounds.
+ *
+ * @param {{startColumn:number,endColumn:number,startRow:number,endRow:number}} region - Region to expand.
+ * @param {number} boardSize - Size (width/height) of the square board.
+ * @param {number} [padding=1] - Number of cells to expand on each side.
+ * @returns {{startColumn:number,endColumn:number,startRow:number,endRow:number}} The expanded region.
+ * @throws {TypeError} If region or boardSize are invalid.
+ */
 const expandRegion = (region, boardSize, padding = 1) => {
    if (
       !region ||
@@ -268,6 +353,13 @@ const expandRegion = (region, boardSize, padding = 1) => {
    return expanded;
 };
 
+/**
+ * Extract a sub-board corresponding to the provided region.
+ *
+ * @param {string[][]} board - The full game board.
+ * @param {{startRow:number,endRow:number,startColumn:number,endColumn:number}} region - Region bounds.
+ * @returns {string[][]} A new 2D array representing the sliced region.
+ */
 const sliceRegion = (board, region) => {
    const { startRow, endRow, startColumn, endColumn } = region;
    const subBoard = [];
@@ -283,6 +375,14 @@ const sliceRegion = (board, region) => {
    return subBoard;
 };
 
+/**
+ * Write a `subBoard` back into `board` at the specified region coordinates.
+ *
+ * @param {string[][]} board - The full game board to modify in-place.
+ * @param {{startRow:number,startColumn:number,endRow:number,endColumn:number}} region - Destination region.
+ * @param {string[][]} subBoard - The sub-board to paste; must match region size.
+ * @throws {Error} If `subBoard` dimensions don't match the region.
+ */
 const pasteRegion = (board, region, subBoard) => {
    const { startRow, startColumn, endRow, endColumn } = region;
 
@@ -302,6 +402,14 @@ const pasteRegion = (board, region, subBoard) => {
    }
 };
 
+/**
+ * Return how many marks in a row are required to win, based on board size.
+ * Supported board sizes: 3..9.
+ *
+ * @param {string[][]} board - The game board (2D array).
+ * @throws {Error} If board size is not supported.
+ * @returns {number} Number of marks required to win.
+ */
 const getWinLength = (board) => {
    switch (board.length) {
       case 3:

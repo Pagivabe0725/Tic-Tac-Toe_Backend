@@ -110,7 +110,6 @@ const signup = async ({ email, password, confirmPassword }) => {
  * @throws {Error} Throws if credentials are invalid or authentication fails
  */
 const login = async ({ email, password }, context) => {
-
    if (!email || !password) {
       throw new Error("Invalid parameter list");
    }
@@ -187,6 +186,55 @@ const logout = async (_, context) => {
 };
 
 /**
+ * Resolver: Update Password
+ * Update a user's password after validating the current password and confirmation.
+ *
+ * @async
+ * @function updatePassword
+ * @param {Object} args - Resolver arguments
+ * @param {string} args.userId - Unique user ID
+ * @param {string} args.password - Current password
+ * @param {string} args.newPassword - New password to set
+ * @param {string} args.confirmPassword - Confirmation of the new password
+ * @returns {Promise<Object>} Result object from the database update operation
+ * @throws {Error} Throws if the update fails or validation fails
+ */
+const updatePassword = async ({ userId, password, newPassword, confirmPassword }) => {
+   try {
+      const updatedUser = await DATABASE.updatePassword(
+         userId,
+         password,
+         newPassword,
+         confirmPassword
+      );
+      return updatedUser;
+   } catch (error) {
+      throw new Error(error.message || "Update failed");
+   }
+};
+
+/**
+ * Resolver: Check Password
+ * Verify that the provided password matches the stored password for a user.
+ *
+ * @async
+ * @function checkPassword
+ * @param {Object} args - Resolver arguments
+ * @param {string} args.userId - Unique user ID
+ * @param {string} args.password - Password to verify
+ * @returns {Promise<boolean>} True if password matches, otherwise false (or database result)
+ * @throws {Error} Throws if the password check operation fails
+ */
+const checkPassword = async ({ userId, password }) => {
+   try {
+      const result = await DATABASE.checkPassword(userId, password);
+      return result;
+   } catch (error) {
+      throw new Error(error.message || "Password check failed");
+   }
+};
+
+/**
  * Exported GraphQL resolvers
  */
 const userResolvers = {
@@ -196,6 +244,8 @@ const userResolvers = {
    signup: signup,
    updatedUser: updatedUser,
    logout: logout,
+   updatePassword: updatePassword,
+   checkPassword:checkPassword
 };
 
 export default userResolvers;

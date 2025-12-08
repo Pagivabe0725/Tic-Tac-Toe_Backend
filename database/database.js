@@ -48,7 +48,7 @@ async function getUserByidentifier(userId) {
       throw new Error(`Invalid userId: ${userId} type`);
    }
 
-   if (!isExistUser(userId)) {
+   if (!(await isExistUser(userId))) {
       throw new Error(`The given userId (${userId}) does not match any existing user`);
    }
 
@@ -107,63 +107,38 @@ async function authenticateUser(email, password) {
 /**
  * Creates a new game for a user
  * @param {string} userId
+ * @param {string} name
  * @param {array} board optional 2D array of strings representing the board
  * @param {object} lastMove optional object {row, column} for last move
  * @param {string} status optional game status ("NOT_STARTED", "IN_PROGRESS", etc.)
+ * @param {string} difficulty game difficulty
+ * @param {string} opponent "computer" or "player"
+ * @param {number} size board size (3-9)
  * @returns {Promise<Game>}
  */
-async function gameCreator(userId, board, lastMove, status, difficulty, opponent, size) {
-   if (typeof userId !== "string") {
-      throw new Error(`Invalid userId: (${userId})`);
-   }
-
-   if (board && !Array.isArray(board)) {
-      throw new Error(`Invalid type: board (${board}) must be a 2D array of strings`);
-   }
-
-   if (!["computer", "player"].includes(opponent)) {
-      throw new Error(
-         `Invalid type: opponent (${opponent}) must be 'computer' or 'player' `
-      );
-   }
-
-   if (!["very_easy", "easy", "medium", "hard"].includes(difficulty)) {
-      throw new Error(
-         `Invalid type: difficulty (${opponent}) must be 'very_easy', 'easy', 'medium' or 'hard' `
-      );
-   }
-
-   if (typeof size !== "number" || size < 3 || size > 9) {
-      throw new Error(`Invalid type: size (${size}) must be number (between 3 and 9) `);
-   }
+async function gameCreator(userId, name, board, lastMove, status, difficulty, opponent, size) {
+   if (typeof userId !== "string") throw new Error(`Invalid userId: (${userId})`);
+   if (typeof name !== "string") throw new Error(`Invalid name: (${name})`);
+   if (board && !Array.isArray(board)) throw new Error(`Invalid type: board (${board}) must be a 2D array of strings`);
+   if (!["computer", "player"].includes(opponent)) throw new Error(`Invalid type: opponent (${opponent}) must be 'computer' or 'player'`);
+   if (!["very_easy", "easy", "medium", "hard"].includes(difficulty)) throw new Error(`Invalid type: difficulty (${difficulty})`);
+   if (typeof size !== "number" || size < 3 || size > 9) throw new Error(`Invalid type: size (${size}) must be number (3-9)`);
 
    if (lastMove) {
-      if (
-         typeof lastMove !== "object" ||
-         typeof lastMove.row !== "number" ||
-         typeof lastMove.column !== "number"
-      ) {
-         throw new Error(
-            `Invalid type: lastMove (${lastMove}) must be an object with numeric 'row' (currently: ${lastMove.row}), 'column' (currently: ${lastMove.column})`
-         );
+      if (typeof lastMove !== "object" || typeof lastMove.row !== "number" || typeof lastMove.column !== "number") {
+         throw new Error(`Invalid type: lastMove must be object with numeric row and column`);
       }
    }
 
-   if (status && typeof status !== "string") {
-      throw new Error(
-         `Invalid type: status (${status}) must be one of ("NOT_STARTED", "IN_PROGRESS", "WON", "LOST", "DRAW")`
-      );
-   }
+   if (status && typeof status !== "string") throw new Error(`Invalid type: status must be one of ("NOT_STARTED","IN_PROGRESS","WON","LOST","DRAW")`);
 
    const userExists = await isExistUser(userId);
-   if (!userExists) {
-      throw new Error(`The given userId: (${userId}) does not match any existing user`);
-   }
+   if (!userExists) throw new Error(`The given userId (${userId}) does not match any existing user`);
 
-   // Use conditional object properties with spread operator
    const properties = {
       gameId: nanoid(),
       userId,
+      name,
       step: 0,
       board,
       ...(lastMove && { lastMove }),
@@ -174,7 +149,6 @@ async function gameCreator(userId, board, lastMove, status, difficulty, opponent
    };
 
    const newGame = await Game.create(properties);
-
    return newGame;
 }
 
@@ -189,14 +163,12 @@ async function gameCreator(userId, board, lastMove, status, difficulty, opponent
 async function updateUser(userId, email, winNumber, loseNumber) {
    if (typeof userId !== "string") throw new Error(`Invalid userId: (${userId})`);
    if (email && typeof email !== "string") throw new Error(`Invalid email: (${email})`);
-   if (winNumber !== undefined && typeof winNumber !== "number")
-      throw new Error(`Invalid winNumber: ${winNumber}`);
-   if (loseNumber !== undefined && typeof loseNumber !== "number")
-      throw new Error(`Invalid loseNumber: ${loseNumber}`);
+   if (winNumber !== undefined && typeof winNumber !== "number") throw new Error(`Invalid winNumber: ${winNumber}`);
+   if (loseNumber !== undefined && typeof loseNumber !== "number") throw new Error(`Invalid loseNumber: ${loseNumber}`);
 
    try {
       const user = await getUserByidentifier(userId);
-      if (!user) throw new Error(`No user found with the given userId: (${userId})`);
+      if (!user) throw new Error(`No user found with userId: (${userId})`);
 
       const updatedFields = {};
       if (email) updatedFields.email = email;
@@ -219,8 +191,7 @@ async function getGameById(gameId) {
    if (typeof gameId !== "string") throw new Error(`Invalid gameId: (${gameId}) type`);
 
    const game = await Game.findOne({ where: { gameId } });
-
-   if (!game) throw new Error(`Not found any game with given gameId: (${gameId})`);
+   if (!game) throw new Error(`No game found with gameId: (${gameId})`);
 
    return game;
 }
@@ -228,26 +199,33 @@ async function getGameById(gameId) {
 /**
  * Retrieves paginated games for a user
  * @param {string} userId
- * @param {number} page page number
- * @param {string} order "ASC" or "DESC"
+ * @param {number} page optional, default 1
+ * @param {string} order "ASC" or "DESC", default "DESC"
+ * @param {string} orderField optional, default "updatedAt"
+ * @param {string} status optional filter by status
  * @returns {Promise<{count:number, rows:Game[]}>}
  */
-async function getGamesByUserID(userId, page = 1, order = "DESC") {
+async function getGamesByUserID(userId, page = 1, order = "DESC", orderField = "updatedAt", status) {
    if (typeof userId !== "string") throw new Error(`Invalid userId: (${userId}) type`);
 
    const safePage = Math.max(page, 1);
    const limit = 10;
    const offset = (safePage - 1) * limit;
 
+   const where = { userId };
+   if (status) where.status = status;
+
    const games = await Game.findAndCountAll({
-      where: { userId },
+      where,
       limit,
       offset,
-      order: [["createdAt", order]],
+      order: [
+         [orderField, order],
+         ["gameId", "asc"],
+      ],
    });
 
-   if (games.rows.length === 0)
-      throw new Error(`No games found for the given userId: (${userId})`);
+   if (games.rows.length === 0) throw new Error(`No games found for userId: (${userId})`);
 
    return games;
 }
@@ -259,75 +237,39 @@ async function getGamesByUserID(userId, page = 1, order = "DESC") {
  * @returns {Promise<Game>} returns deleted game's data
  */
 async function deleteGame(userId, gameId) {
-   if (typeof userId !== "string") throw new Error(`Invalid userId: ${userId} type`);
-   if (typeof gameId !== "string") throw new Error(`Invalid gameId: (${gameId}) type`);
+   if (typeof userId !== "string") throw new Error(`Invalid userId: ${userId}`);
+   if (typeof gameId !== "string") throw new Error(`Invalid gameId: (${gameId})`);
 
    const game = await Game.findOne({ where: { gameId } });
-   if (!game) throw new Error(`No games found for the given gameId: (${gameId})`);
-   if (game.dataValues?.userId !== userId)
-      throw new Error(`userId: (${userId}) does not match the game's owner.`);
+   if (!game) throw new Error(`No game found for gameId: (${gameId})`);
+   if (game.dataValues?.userId !== userId) throw new Error(`userId: (${userId}) does not match game's owner`);
 
    const copiedGame = game.dataValues;
    await game.destroy();
-
    return copiedGame;
 }
 
 /**
- * Updates a game's last move, board or status
+ * Updates a game's properties
  * @param {string} gameId
+ * @param {string} name optional
  * @param {object} lastMove optional
  * @param {array} board optional
  * @param {string} status optional
+ * @param {string} difficulty optional
+ * @param {string} opponent optional
+ * @param {number} size optional
  * @returns {Promise<Game>}
  */
-async function updateGame(gameId, lastMove, board, status, difficulty, opponent, size) {
-   if (typeof gameId !== "string") throw new Error(`Invalid gameId : ${gameId} type`);
-
-    if (board && !Array.isArray(board)) {
-      throw new Error(`Invalid type: board (${board}) must be a 2D array of strings`);
-   }
-
-   if (opponent && !["computer", "player"].includes(opponent)) {
-      throw new Error(
-         `Invalid type: opponent (${opponent}) must be 'computer' or 'player' `
-      );
-   }
-
-   if (difficulty && !["very_easy", "easy", "medium", "hard"].includes(difficulty)) {
-      throw new Error(
-         `Invalid type: difficulty (${opponent}) must be 'very_easy', 'easy', 'medium' or 'hard' `
-      );
-   }
-
-   if (size && typeof size !== "number" || size < 3 || size > 9) {
-      throw new Error(`Invalid type: size (${size}) must be number (between 3 and 9) `);
-   }
-
-   if (lastMove) {
-      if (
-         typeof lastMove !== "object" ||
-         typeof lastMove.row !== "number" ||
-         typeof lastMove.column !== "number"
-      ) {
-         throw new Error(
-            `Invalid type: lastMove (${lastMove}) must be an object with numeric 'row' (currently: ${lastMove.row}), 'column' (currently: ${lastMove.column})`
-         );
-      }
-   }
-
-   if (status && typeof status !== "string") {
-      throw new Error(
-         `Invalid type: status (${status}) must be one of ("NOT_STARTED", "IN_PROGRESS", "WON", "LOST", "DRAW")`
-      );
-   }
+async function updateGame(gameId, name, lastMove, board, status, difficulty, opponent, size) {
+   if (typeof gameId !== "string") throw new Error(`Invalid gameId: ${gameId}`);
 
    const game = await Game.findOne({ where: { gameId } });
-   if (!game)
-      throw new Error(`gameId: (${gameId}) does not match with any existing game`);
+   if (!game) throw new Error(`gameId: (${gameId}) does not match any existing game`);
 
    await game.update({
       ...(lastMove && { lastMove }),
+      ...(name && { name }),
       ...(board && { board }),
       ...(status && { status }),
       ...(difficulty && { difficulty }),
@@ -338,6 +280,44 @@ async function updateGame(gameId, lastMove, board, status, difficulty, opponent,
    return game;
 }
 
+/**
+ * Updates a user's password
+ * @param {string} userId
+ * @param {string} password current password
+ * @param {string} newPassword
+ * @param {string} confirmPassword
+ * @returns {Promise<User>}
+ */
+async function updatePassword(userId, password, newPassword, confirmPassword) {
+   if (typeof userId !== "string") throw new Error(`Invalid 'userId': ${userId}`);
+   if (typeof password !== "string") throw new Error(`Invalid 'password'`);
+   if (typeof newPassword !== "string") throw new Error(`Invalid 'newPassword'`);
+   if (typeof confirmPassword !== "string") throw new Error(`Invalid 'confirmPassword'`);
+
+   if (confirmPassword.trim() !== newPassword.trim()) throw new Error(`newPassword and confirmPassword do not match`);
+
+   const user = await getUserByidentifier(userId);
+   if (!(await bcrypt.compare(password, user.password))) throw new Error(`Incoming password does not match user's password`);
+
+   await user.update({ password: await bcrypt.hash(newPassword, saltRounds) });
+   return user.dataValues;
+}
+
+/**
+ * Checks if the provided password matches the user's current password
+ * @param {string} userId
+ * @param {string} password
+ * @returns {Promise<boolean>}
+ */
+async function checkPassword(userId, password) {
+   if (typeof userId !== "string") throw new Error(`Invalid 'userId': ${userId}`);
+   if (typeof password !== "string") throw new Error(`Invalid 'password'`);
+
+   const { dataValues: user } = await getUserByidentifier(userId);
+   return await bcrypt.compare(password, user.password);
+}
+
+// Export all service functions
 export default {
    userCreator,
    gameCreator,
@@ -349,4 +329,6 @@ export default {
    getGamesByUserID,
    deleteGame,
    updateGame,
+   updatePassword,
+   checkPassword,
 };

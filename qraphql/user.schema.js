@@ -25,6 +25,7 @@ const schema = buildSchema(`
   type RootQuery {
     user(id: ID!): User!
     csrfToken: CsrfToken!
+    checkPassword(userId: ID!, password:String!):Boolean
   }
 
   # ---------- MUTATIONS ----------
@@ -46,6 +47,13 @@ const schema = buildSchema(`
       winNumber: Int
       loseNumber: Int
     ): User
+
+    updatePassword(
+      userId: ID!
+      password: String!
+      newPassword:String!
+      confirmPassword:String!
+    ):User
 
     logout: Boolean
   }

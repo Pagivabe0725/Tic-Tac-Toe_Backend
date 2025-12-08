@@ -13,11 +13,20 @@ import helperFunction from "../game/helper.function.js";
  * @throws Will throw an error if creation fails
  */
 const createGame = async (args) => {
-   const { userId, board, lastMove, status, difficulty, opponent, size } = args;
-   console.log('CREATEGAME')
-   console.log(userId, board, lastMove, status, difficulty, opponent, size)
+   const { userId, name, board, lastMove, status, difficulty, opponent, size } = args;
+   console.log("CREATEGAME");
+   console.log(userId, board, lastMove, status, difficulty, opponent, size);
    try {
-      const game = await DATABASE.gameCreator(userId, board, lastMove, status, difficulty, opponent, size );
+      const game = await DATABASE.gameCreator(
+         userId,
+         name,
+         board,
+         lastMove,
+         status,
+         difficulty,
+         opponent,
+         size
+      );
       return game?.dataValues ?? game;
    } catch (error) {
       throw new Error(error.message || "Unknown error while creating game");
@@ -51,11 +60,14 @@ const getGameByGameId = async (args) => {
  * @throws Will throw an error if fetching fails
  */
 const getGamesByUserId = async (args) => {
-   const { userId, page, order } = args;
+   const { userId, page, order, orderField, status } = args;
    try {
-      const games = await DATABASE.getGamesByUserID(userId, page, order);
+      const games = await DATABASE.getGamesByUserID(userId, page, order, orderField, status);
       const rows = games.rows;
-      return rows.map(game => game.dataValues);
+      const count = games.count
+      const result = {count}
+      result.games =rows.map((game) => game.dataValues);
+      return result
    } catch (error) {
       throw new Error(error.message || "Unknown error while fetching games");
    }
@@ -90,9 +102,18 @@ const deleteGame = async (args) => {
  * @throws Will throw an error if update fails
  */
 const updateGame = async (args) => {
-   const { gameId, status, board, lastMove, difficulty, opponent, size } = args;
+   const { gameId, name,status, board, lastMove, difficulty, opponent, size } = args;
    try {
-      const game = await DATABASE.updateGame(gameId, lastMove, board, status, difficulty, opponent, size);
+      const game = await DATABASE.updateGame(
+         gameId,
+         name,
+         lastMove,
+         board,
+         status,
+         difficulty,
+         opponent,
+         size
+      );
       return game;
    } catch (error) {
       throw new Error(error.message || "Unknown error while updating game");

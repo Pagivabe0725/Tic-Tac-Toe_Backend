@@ -1,5 +1,13 @@
 import helperFunctions from "../helper.function.js";
 
+/**
+ * Very-easy AI: place a random mark anywhere on the board.
+ * Chooses any empty cell uniformly at random.
+ *
+ * @param {string[][]} board - The current game board.
+ * @throws {Error} If the board is full and no moves are available.
+ * @returns {{board:string[][], lastMove:{row:number,column:number}}} The updated board and chosen move coordinates.
+ */
 function veryEasyMove(board) {
     if (helperFunctions.isBoardFull(board))
         throw new Error('No available moves');

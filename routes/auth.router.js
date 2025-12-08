@@ -122,4 +122,40 @@ router.patch("/update-user", AuthController.updateUser);
  */
 router.post("/get-user-by-identifier", AuthController.getUserByidentifier);
 
+/**
+ * POST /update-password
+ * Update the authenticated user's password.
+ *
+ * Requires the current password and the new password confirmation.
+ *
+ * Request body:
+ *  {
+ *    userId: string,
+ *    password: string,
+ *    newPassword: string,
+ *    confirmPassword: string
+ *  }
+ *
+ * Response:
+ *  { user: { userId, email, winNumber, loseNumber, createdAt, updatedAt } }
+ */
+router.post("update-password", AuthController.updatePassword);
+
+/**
+ * POST /check-password
+ * Verify whether the provided password matches the stored user password.
+ *
+ * Used for validating sensitive operations before allowing changes.
+ *
+ * Request body:
+ *  {
+ *    userId: string,
+ *    password: string
+ *  }
+ *
+ * Response:
+ *  { isEqual: boolean }
+ */
+router.post("/check-password", AuthController.checkPassword);
+
 export default router;

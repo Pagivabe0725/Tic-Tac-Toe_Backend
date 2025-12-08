@@ -55,6 +55,20 @@ function wouldWinAfterMove(board, row, column, markup, winLength = 3) {
 }
 
 
+/**
+ * Check whether placing `markup` at `[row,column]` would create a board
+ * state where the specified mark is one move away from winning.
+ *
+ * This helper clones the board, applies the hypothetical move and then
+ * checks for a near-win state using a reduced `winLength - 1` threshold.
+ *
+ * @param {string[][]} board - The current game board.
+ * @param {number} row - Row index to test.
+ * @param {number} column - Column index to test.
+ * @param {string} markup - The mark to place ('x' or 'o').
+ * @param {number} winLength - Number of marks required to win on this board size.
+ * @returns {boolean} True if the move would put `markup` one step away from winning.
+ */
 function opponentAlmostWin(board , row, column , markup, winLength ){
   const boardClone = board.map(boardRow => [...boardRow])
   boardClone[row][column] = markup

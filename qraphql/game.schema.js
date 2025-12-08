@@ -34,6 +34,11 @@ const gameSchema = buildSchema(`
     player
   }
 
+  enum  OrderField {
+    name
+    updatedAt
+  }
+
   # ---------- INPUT TYPES ----------
   input LastMoveInput {
     row: Int
@@ -62,6 +67,7 @@ const gameSchema = buildSchema(`
 
   type Game {
     gameId: ID!
+    name : String!
     lastMove: LastMove
     status: GameStatus!
     userId: ID!
@@ -73,6 +79,11 @@ const gameSchema = buildSchema(`
     size: Int!
   }
 
+  type Games {
+    games: [Game!]
+    count : Int!
+  }
+
   # ---------- QUERIES ----------
   type RootQuery {
     game(gameId: ID!): Game!
@@ -80,7 +91,9 @@ const gameSchema = buildSchema(`
       userId: ID!
       page: Int!
       order: Order
-    ): [Game]!
+      orderField: OrderField!
+      status: GameStatus
+    ): Games!
 
     checkBoard(board:[[String!]!]):Winner
   }
@@ -89,6 +102,7 @@ const gameSchema = buildSchema(`
   type RootMutation {
     createGame(
       userId: ID!
+      name: String!
       board: [[String!]!]!
       lastMove: LastMoveInput
       status: GameStatus!
@@ -104,6 +118,7 @@ const gameSchema = buildSchema(`
 
     updateGame(
       gameId: ID!
+      name: String
       lastMove: LastMoveInput
       status: GameStatus
       board: [[String!]!]

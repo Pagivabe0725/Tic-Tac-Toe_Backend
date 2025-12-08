@@ -14,6 +14,11 @@ const Game = Connection.define("Game", {
       primaryKey: true,
    },
 
+   name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+   },
+
    // 2D array representing the game board
    board: {
       type: DataTypes.JSON,
@@ -36,7 +41,7 @@ const Game = Connection.define("Game", {
    },
 
    difficulty: {
-      type: DataTypes.ENUM("very-easy", "easy", "medium", "hard"),
+      type: DataTypes.ENUM("very_easy", "easy", "medium", "hard"),
       allowNull: false,
    },
 
