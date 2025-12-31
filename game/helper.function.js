@@ -209,7 +209,7 @@ const startCheck = (board, markup, hardness, region, lastMove) => {
       throw new TypeError('Invalid "markup": must be "x" or "o".');
    }
 
-   const validHardness = ["very-easy", "easy", "medium", "hard"];
+   const validHardness = ["very_easy", "easy", "medium", "hard"];
    if (!validHardness.includes(hardness)) {
       throw new TypeError(
          `Invalid "hardness" value. Expected one of: ${validHardness.join(", ")}`
@@ -450,7 +450,6 @@ const getWinLength = (board) => {
  * @example
  * const region = { startRow: 2, endRow: 4, startColumn: 2, endColumn: 4 };
  * const newRegion = expandRegionIfEdgeHasMark(board, region);
- * console.log(newRegion);
  */
 const expandRegionIfEdgeHasMark = (board, region) => {
    const { startRow, endRow, startColumn, endColumn } = region;

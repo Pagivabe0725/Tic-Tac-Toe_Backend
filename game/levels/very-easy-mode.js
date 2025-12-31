@@ -21,8 +21,6 @@ function veryEasyMove(board) {
     const newBoard = board.map(r => [...r]);
     newBoard[row][column] = markup;
 
-
-    console.log('very-easy')
     return {
         board: newBoard,
         lastMove: { row, column }

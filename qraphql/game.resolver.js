@@ -14,8 +14,6 @@ import helperFunction from "../game/helper.function.js";
  */
 const createGame = async (args) => {
    const { userId, name, board, lastMove, status, difficulty, opponent, size } = args;
-   console.log("CREATEGAME");
-   console.log(userId, board, lastMove, status, difficulty, opponent, size);
    try {
       const game = await DATABASE.gameCreator(
          userId,
@@ -62,12 +60,18 @@ const getGameByGameId = async (args) => {
 const getGamesByUserId = async (args) => {
    const { userId, page, order, orderField, status } = args;
    try {
-      const games = await DATABASE.getGamesByUserID(userId, page, order, orderField, status);
+      const games = await DATABASE.getGamesByUserID(
+         userId,
+         page,
+         order,
+         orderField,
+         status
+      );
       const rows = games.rows;
-      const count = games.count
-      const result = {count}
-      result.games =rows.map((game) => game.dataValues);
-      return result
+      const count = games.count;
+      const result = { count };
+      result.games = rows.map((game) => game.dataValues);
+      return result;
    } catch (error) {
       throw new Error(error.message || "Unknown error while fetching games");
    }
@@ -102,7 +106,7 @@ const deleteGame = async (args) => {
  * @throws Will throw an error if update fails
  */
 const updateGame = async (args) => {
-   const { gameId, name,status, board, lastMove, difficulty, opponent, size } = args;
+   const { gameId, name, status, board, lastMove, difficulty, opponent, size } = args;
    try {
       const game = await DATABASE.updateGame(
          gameId,

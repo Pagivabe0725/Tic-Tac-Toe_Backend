@@ -28,7 +28,6 @@ function aiMove(board, markup = null, hardness, lastMove) {
    const winLength = helperFunctions.getWinLength(board);
 
    const hasAlreadyWinner = helperFunctions.getWinner(board, null, winLength);
-   console.log(hasAlreadyWinner);
    if (hasAlreadyWinner) {
       return {
          winner: hasAlreadyWinner,
@@ -77,7 +76,11 @@ function aiMove(board, markup = null, hardness, lastMove) {
 
    // --- If region has no available moves, expand further ---
    while (!availableMoves.length && !helperFunctions.isBoardFull(board)) {
-      usedRegion = helperFunctions.expandRegion(usedRegion, board.length, hardness === "hard" ? 2 : 1);
+      usedRegion = helperFunctions.expandRegion(
+         usedRegion,
+         board.length,
+         hardness === "hard" ? 2 : 1
+      );
       usedBoard = helperFunctions.sliceRegion(board, usedRegion);
       availableMoves = helperFunctions.getAvailableMoves(usedBoard);
    }
@@ -85,7 +88,7 @@ function aiMove(board, markup = null, hardness, lastMove) {
    // --- AI move selection based on difficulty ---
    let result;
    switch (hardness) {
-      case "very-easy":
+      case "very_easy":
          result = veryEasyMove(usedBoard);
          break;
       case "easy":

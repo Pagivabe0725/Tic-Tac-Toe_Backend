@@ -158,4 +158,6 @@ router.post("update-password", AuthController.updatePassword);
  */
 router.post("/check-password", AuthController.checkPassword);
 
+
+
 export default router;

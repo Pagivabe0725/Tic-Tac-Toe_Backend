@@ -113,6 +113,39 @@ const deleteGame = async (req, res, next) => {
    }
 };
 
+/**
+ * Creates a new game.
+ * 
+ * Accepts game-related data from the request body, delegates the creation
+ * process to the database layer, and returns the created game object.
+ * 
+ * This endpoint is responsible for initializing a new game session,
+ * including board state, difficulty, opponent type, and game metadata.
+ */
+const createGame = async (req, res, next) => {
+   const { userId, name, board, lastMove, status, difficulty, opponent, size } = req.body;
+
+   try {
+      // Create a new game entry in the database
+      const game = await DATABASE.gameCreator(
+         userId,
+         name,
+         board,
+         lastMove,
+         status,
+         difficulty,
+         opponent,
+         size
+      );
+
+      // Return the created game data to the client
+      res.status(200).json({ ...game.dataValues });
+   } catch (error) {
+      // Forward any unexpected errors to the global error handler
+      next(error);
+   }
+};
+
 export default {
    aiMoveController,
    checkWinner,
@@ -120,4 +153,5 @@ export default {
    getGamesByUserId,
    updateGame,
    deleteGame,
+   createGame,
 };

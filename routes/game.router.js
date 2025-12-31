@@ -32,7 +32,7 @@ router.post("/get", gameController.getGameById);
 router.post("/get-all", gameController.getGamesByUserId);
 
 /**
- * POST /update-game
+ * PATCH /update-game
  * Request body: 
  *    {
  *       gameId: string,
@@ -42,7 +42,7 @@ router.post("/get-all", gameController.getGamesByUserId);
  *    }
  * Response: Updated Game object
  */
-router.post("/update-game", gameController.updateGame);
+router.patch("/update-game", gameController.updateGame);
 
 /**
  * POST /delete-game
@@ -79,5 +79,24 @@ router.post("/ai-move", gameController.aiMoveController);
  *    { winner: "x" | "o" | "draw" | null }
  */
 router.post("/check-board", gameController.checkWinner);
+
+/**
+ * POST /create-game
+ * Request body:
+ *    {
+ *       userId: string,
+ *       name: string,
+ *       board: string[][],
+ *       lastMove?: { row: number, column: number },
+ *       status: "not_started" | "in_progress" | "won" | "lost" | "draw",
+ *       difficulty: "very-easy" | "easy" | "medium" | "hard",
+ *       opponent: "AI" | "PLAYER",
+ *       size: number
+ *    }
+ * Response:
+ *    Game object
+ */
+router.post("/create-game", gameController.createGame);
+
 
 export default router;

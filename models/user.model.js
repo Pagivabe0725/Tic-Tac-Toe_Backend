@@ -40,7 +40,8 @@ const User = Connection.define("User", {
       allowNull: false,
       defaultValue: 0,
    },
-
+   
+   // Total number of saved games created by the user
    game_count: {
       type: DataTypes.INTEGER,
       allowNull: false,
