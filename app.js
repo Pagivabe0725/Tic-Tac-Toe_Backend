@@ -47,13 +47,16 @@ const sessionStore = new MySQLStore({
    checkExpirationInterval: HOUR * 0.25,
 });
 
+// Trust the first reverse proxy (e.g. Nginx, load balancer) so secure cookies and client IP work correctly
+app.set("trust proxy", 1);
+
 // --- CORS configuration ---
 // Allows the Angular frontend (localhost:4200) to call this API and include cookies.
 app.use(
    cors({
       origin: true,
       credentials: true,
-   })
+   }),
 );
 
 // --- Request body parsing ---
@@ -80,7 +83,7 @@ app.use(
          secure: true, // Must be true when using HTTPS in production
          sameSite: "none", // Allow cross-site requests (required for cross-origin frontend); must be used with secure: true
       },
-   })
+   }),
 );
 
 // --- GraphQL endpoint ---
