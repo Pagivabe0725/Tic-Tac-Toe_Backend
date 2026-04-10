@@ -14,7 +14,7 @@ import SessionController from "./controllers/session.controller.js";
 import graphqlRouter from "./routes/graphql.router.js";
 
 // Load database-related environment variables (host/user/password/db name, etc.)
-dotenv.config({ path: "./environment/database.environment.env" });
+dotenv.config();
 
 // Initialize MySQL session store factory using express-session
 const MySQLStore = MySQLStoreImport(session);
@@ -124,7 +124,7 @@ app.use((error, req, res, next) => {
 Connection.sync()
    .then(() => {
       console.log("DB synced");
-      app.listen(3000, () => console.log("The server is running"));
+      app.listen(process.env.PORT || 3000, () => console.log("The server is running"));
    })
    .catch((error) => {
       console.log(error);
