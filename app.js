@@ -54,7 +54,7 @@ app.set("trust proxy", 1);
 // Allows the Angular frontend (localhost:4200) to call this API and include cookies.
 app.use(
    cors({
-      origin: true,
+      origin: "https://tic-tac-toesite-aq4tu6bm8-pagivabe0725s-projects.vercel.app",
       credentials: true,
    }),
 );
