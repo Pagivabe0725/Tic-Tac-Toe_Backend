@@ -51,7 +51,7 @@ const sessionStore = new MySQLStore({
 // Allows the Angular frontend (localhost:4200) to call this API and include cookies.
 app.use(
    cors({
-      origin: "http://localhost:4200",
+      origin: true,
       credentials: true,
    })
 );
@@ -77,8 +77,8 @@ app.use(
       cookie: {
          maxAge: HOUR * 48, // Session cookie lifetime (48 hours)
          httpOnly: true, // Prevent JS access to the cookie
-         secure: false, // Must be true when using HTTPS in production
-         sameSite: "lax", // Helps mitigate CSRF while allowing normal navigation
+         secure: true, // Must be true when using HTTPS in production
+         sameSite: "none", // Allow cross-site requests (required for cross-origin frontend); must be used with secure: true
       },
    })
 );
