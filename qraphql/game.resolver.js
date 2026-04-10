@@ -23,7 +23,7 @@ const createGame = async (args) => {
          status,
          difficulty,
          opponent,
-         size
+         size,
       );
       return game?.dataValues ?? game;
    } catch (error) {
@@ -65,12 +65,21 @@ const getGamesByUserId = async (args) => {
          page,
          order,
          orderField,
-         status
+         status,
       );
       const rows = games.rows;
       const count = games.count;
       const result = { count };
-      result.games = rows.map((game) => game.dataValues);
+      result.games = rows.map((game) => {
+         const values = game.dataValues;
+
+         return {
+            ...values,
+            board: JSON.parse(values.board),
+         };
+      });
+      console.log("result");
+      console.log(result);
       return result;
    } catch (error) {
       throw new Error(error.message || "Unknown error while fetching games");
@@ -116,7 +125,7 @@ const updateGame = async (args) => {
          status,
          difficulty,
          opponent,
-         size
+         size,
       );
       return game;
    } catch (error) {
