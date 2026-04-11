@@ -70,14 +70,7 @@ const getGamesByUserId = async (args) => {
       const rows = games.rows;
       const count = games.count;
       const result = { count };
-      result.games = rows.map((game) => {
-         const values = game.dataValues;
-
-         return {
-            ...values,
-            board: JSON.parse(values.board),
-         };
-      });
+      result.games = rows.map((game) => game.dataValues);
       console.log("result");
       console.log(result);
       return result;

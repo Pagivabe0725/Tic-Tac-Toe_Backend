@@ -85,6 +85,10 @@ function aiMove(board, markup = null, hardness, lastMove) {
       availableMoves = helperFunctions.getAvailableMoves(usedBoard);
    }
 
+   
+   console.log('usedBoard')
+   console.log(usedBoard)
+
    // --- AI move selection based on difficulty ---
    let result;
    switch (hardness) {
@@ -98,7 +102,7 @@ function aiMove(board, markup = null, hardness, lastMove) {
          result = mediumMove(usedBoard, lastMove || null, winLength);
          break;
       case "hard":
-         result = hardMove(usedBoard, markup, winLength, 3);
+         result = hardMove(usedBoard, markup, winLength, 4);
          break;
       default:
          throw new Error(`Unknown difficulty level: ${hardness}`);
