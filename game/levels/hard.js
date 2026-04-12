@@ -1,14 +1,18 @@
 import helperFunctions from "../helper.function.js";
 
 /**
- * Heuristic evaluation function for the board.
- * Rewards the AI for potential winning lines and center control,
- * but prioritizes blocking the opponent when they are about to win.
+ * Heuristic evaluation of the board state.
+ * Scores potential winning lines, prioritizes blocking imminent opponent wins,
+ * and slightly prefers central positions to encourage natural play.
  *
- * @param {string[][]} board - The current game board.
- * @param {string} markup - The AI's mark ('x' or 'o').
+ * The evaluation scans all possible segments of length `winLength` in four
+ * directions (horizontal, vertical, and two diagonals), counting AI marks,
+ * opponent marks, and empty cells. Scores are accumulated based on these counts.
+ *
+ * @param {string[][]} board - Current game board.
+ * @param {string} markup - AI mark ('x' or 'o').
  * @param {number} [winLength=3] - Number of consecutive marks required to win.
- * @returns {number} The heuristic score: positive favors AI, negative favors opponent.
+ * @returns {number} Heuristic score where positive favors AI and negative favors opponent.
  */
 const evaluateBoard = (board, markup, winLength = 3) => {
    const opponent = markup === "x" ? "o" : "x";
@@ -21,7 +25,7 @@ const evaluateBoard = (board, markup, winLength = 3) => {
       [1, -1], // diagonal down-left
    ];
 
-   // Scan each direction to analyze potential winning lines
+   // Scan each direction to analyze potential winning segments
    for (let row = 0; row < board.length; row++) {
       for (let col = 0; col < board[row].length; col++) {
          for (const [dRow, dCol] of directions) {
@@ -32,7 +36,7 @@ const evaluateBoard = (board, markup, winLength = 3) => {
             for (let i = 0; i < winLength; i++) {
                const r = row + dRow * i;
                const c = col + dCol * i;
-               if (r < 0 || c < 0 || r >= board.length || c >= board.length) break;
+               if (r < 0 || r >= board.length || c < 0 || c >= board[r].length) break;
 
                const cell = board[r][c];
                if (cell === markup) aiCount++;
@@ -40,13 +44,18 @@ const evaluateBoard = (board, markup, winLength = 3) => {
                else emptyCount++;
             }
 
-            // High-priority conditions
-            if (aiCount === winLength) score += 5000; // winning line
-            if (opponentCount === winLength) score -= 5000; // losing line
-            if (aiCount === winLength - 1 && emptyCount === 1) score += 2500; // one move away from winning
-            if (opponentCount === winLength - 1 && emptyCount === 1) score -= 2500; // block urgently
+            // Terminal-like scoring
+            if (opponentCount === 0 && aiCount === winLength) score += 1000000;
+            if (aiCount === 0 && opponentCount === winLength) score -= 1000000;
 
-            // General heuristics
+            // One move away from winning / losing
+            if (opponentCount === 0 && aiCount === winLength - 1 && emptyCount === 1)
+               score += 20000;
+
+            if (aiCount === 0 && opponentCount === winLength - 1 && emptyCount === 1)
+               score -= 40000;
+
+            // General positional heuristics
             if (aiCount > 0 && opponentCount === 0)
                score += Math.pow(aiCount, 3) + emptyCount;
             else if (opponentCount > 0 && aiCount === 0)
@@ -55,7 +64,7 @@ const evaluateBoard = (board, markup, winLength = 3) => {
       }
    }
 
-   // Slightly prefer the center — encourages more natural play
+   // Slightly prefer central positions
    const mid = Math.floor(board.length / 2);
    for (let row = 0; row < board.length; row++) {
       for (let col = 0; col < board[row].length; col++) {
@@ -70,18 +79,21 @@ const evaluateBoard = (board, markup, winLength = 3) => {
 };
 
 /**
- * Minimax algorithm with alpha-beta pruning and heuristic evaluation.
- * Recursively explores possible game states up to a defined depth.
+ * Minimax algorithm with alpha-beta pruning.
+ * Recursively explores possible game states and evaluates them using
+ * terminal win detection or heuristic evaluation at the depth limit.
+ *
+ * Move ordering is applied to improve pruning efficiency.
  *
  * @param {string[][]} board - Current board state.
- * @param {string} markup - AI's mark ('x' or 'o').
+ * @param {string} markup - AI mark ('x' or 'o').
  * @param {number} depth - Current recursion depth.
- * @param {boolean} isMaximizing - True if maximizing AI score, false if minimizing opponent.
- * @param {number} alpha - Alpha value for pruning.
- * @param {number} beta - Beta value for pruning.
+ * @param {boolean} isMaximizing - Whether the current branch maximizes the AI score.
+ * @param {number} alpha - Alpha bound for pruning.
+ * @param {number} beta - Beta bound for pruning.
  * @param {number} maxDepth - Maximum recursion depth.
  * @param {number} winLength - Number of consecutive marks required to win.
- * @returns {number} Evaluation score of this board state.
+ * @returns {number} Evaluation score of the board state.
  */
 const minimax = (
    board,
@@ -96,25 +108,37 @@ const minimax = (
    const winner = helperFunctions.getWinner(board, null, winLength);
    const opponent = markup === "x" ? "o" : "x";
 
-   // Terminal state
+   // Terminal state evaluation
    if (winner !== null) {
       if (winner === markup) return 10000 - depth;
       if (winner === opponent) return depth - 10000;
       return 0;
    }
 
-   // Stop search and use heuristic evaluation
+   // Depth limit reached → heuristic evaluation
    if (depth >= maxDepth) {
       return evaluateBoard(board, markup, winLength);
    }
 
    const availableMoves = helperFunctions.getAvailableMoves(board);
-   const relevantAvailableMoves = helperFunctions.getRelevantAvailableMoves(board, availableMoves)
+
+   const relevantAvailableMoves = helperFunctions.getRelevantAvailableMoves(
+      board,
+      availableMoves,
+   );
+
+   const orderedRelevantAvailableMoves = helperFunctions.orderAvailableMoves(
+      board,
+      relevantAvailableMoves,
+      isMaximizing ? markup : opponent,
+   );
 
    if (isMaximizing) {
       let maxEval = -Infinity;
-      for (const [row, col] of relevantAvailableMoves) {
+
+      for (const [row, col] of orderedRelevantAvailableMoves) {
          board[row][col] = markup;
+
          const evalScore = minimax(
             board,
             markup,
@@ -125,16 +149,23 @@ const minimax = (
             maxDepth,
             winLength,
          );
+
          board[row][col] = "e";
+
          maxEval = Math.max(maxEval, evalScore);
          alpha = Math.max(alpha, evalScore);
-         if (beta <= alpha) break; // prune
+
+         // Alpha-beta pruning
+         if (beta <= alpha) break;
       }
+
       return maxEval;
    } else {
       let minEval = Infinity;
-      for (const [row, col] of relevantAvailableMoves) {
+
+      for (const [row, col] of orderedRelevantAvailableMoves) {
          board[row][col] = opponent;
+
          const evalScore = minimax(
             board,
             markup,
@@ -145,51 +176,62 @@ const minimax = (
             maxDepth,
             winLength,
          );
+
          board[row][col] = "e";
+
          minEval = Math.min(minEval, evalScore);
          beta = Math.min(beta, evalScore);
-         if (beta <= alpha) break; // prune
+
+         // Alpha-beta pruning
+         if (beta <= alpha) break;
       }
+
       return minEval;
    }
 };
 
 /**
- * Determines the best move for the AI using:
- *  1. Immediate win detection
- *  2. Immediate block if opponent is about to win
- *  3. Minimax with alpha–beta pruning otherwise
+ * Determines the best move for the AI using a three-step strategy:
  *
- * Returns both the updated board and the move coordinates.
+ * 1. Immediate winning move detection
+ * 2. Immediate blocking move if opponent can win next turn
+ * 3. Minimax search with alpha-beta pruning otherwise
+ *
+ * Only relevant moves are evaluated and ordered to improve performance.
  *
  * @function hardMove
- * @param {string[][]} board - The current board state.
- * @param {string} markup - The AI's mark ('x' or 'o').
+ * @param {string[][]} board - Current board state.
+ * @param {string} markup - AI mark ('x' or 'o').
  * @param {number} [winLength=3] - Number of consecutive marks required to win.
- * @param {number} [maxDepth=3] - Maximum recursion depth for minimax.
+ * @param {number} [maxDepth=3] - Maximum minimax recursion depth.
  * @returns {{
  *   board: string[][],
  *   lastMove: { row: number, column: number } | null
- * }} The updated board and the coordinates of the AI's chosen move.
+ * }} Updated board and coordinates of the selected move.
  */
 const hardMove = (board, markup, winLength = 3, maxDepth = 3) => {
-   console.log("hardModeBoard:");
-   console.log(board);
-
    const opponent = markup === "x" ? "o" : "x";
+
    const availableMoves = helperFunctions.getAvailableMoves(board);
-   const relevantAvailableMoves = helperFunctions.getRelevantAvailableMoves(board,availableMoves);
-   console.log('moves')
-   console.log(availableMoves)
-   console.log('relevantMoves')
-   console.log(relevantAvailableMoves)
+
+   const relevantAvailableMoves = helperFunctions.getRelevantAvailableMoves(
+      board,
+      availableMoves,
+   );
+
+   const orderedRelevantAvailableMoves = helperFunctions.orderAvailableMoves(
+      board,
+      relevantAvailableMoves,
+      markup,
+   );
 
    if (!relevantAvailableMoves.length) return { board, lastMove: null };
 
-   // Step 1: Try to win immediately
-   for (const [row, col] of relevantAvailableMoves) {
+   // Step 1: Immediate winning move
+   for (const [row, col] of orderedRelevantAvailableMoves) {
       const temp = board.map((r) => [...r]);
       temp[row][col] = markup;
+
       if (helperFunctions.getWinner(temp, null, winLength) === markup) {
          return {
             board: temp,
@@ -198,13 +240,15 @@ const hardMove = (board, markup, winLength = 3, maxDepth = 3) => {
       }
    }
 
-   // Step 2: Block opponent's immediate win
-   for (const [row, col] of relevantAvailableMoves) {
+   // Step 2: Block opponent immediate win
+   for (const [row, col] of orderedRelevantAvailableMoves) {
       const temp = board.map((r) => [...r]);
       temp[row][col] = opponent;
+
       if (helperFunctions.getWinner(temp, null, winLength) === opponent) {
          const newBoard = board.map((r) => [...r]);
          newBoard[row][col] = markup;
+
          return {
             board: newBoard,
             lastMove: { row, column: col },
@@ -212,12 +256,13 @@ const hardMove = (board, markup, winLength = 3, maxDepth = 3) => {
       }
    }
 
-   // Step 3: Otherwise, use minimax for the best strategic move
+   // Step 3: Minimax search
    let bestScore = -Infinity;
    let bestMove = null;
 
-   for (const [row, col] of relevantAvailableMoves) {
+   for (const [row, col] of orderedRelevantAvailableMoves) {
       board[row][col] = markup;
+
       const moveScore = minimax(
          board,
          markup,
@@ -228,6 +273,7 @@ const hardMove = (board, markup, winLength = 3, maxDepth = 3) => {
          maxDepth,
          winLength,
       );
+
       board[row][col] = "e";
 
       if (moveScore > bestScore) {
@@ -241,8 +287,6 @@ const hardMove = (board, markup, winLength = 3, maxDepth = 3) => {
    const newBoard = board.map((r) => [...r]);
    newBoard[bestMove.row][bestMove.column] = markup;
 
-   console.log('step')
-   console.log(bestMove)
    return {
       board: newBoard,
       lastMove: bestMove,

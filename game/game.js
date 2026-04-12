@@ -5,24 +5,30 @@ import mediumMove from "./levels/medium.js";
 import veryEasyMove from "./levels/very-easy-mode.js";
 
 /**
- * Handles AI move generation across all difficulty levels.
- * The AI first identifies the currently used region of the board,
- * optionally expands it if marks are near its edges, and then computes
- * the next optimal move based on the selected difficulty.
+ * Computes the AI move for the given board and difficulty level.
  *
- * @param {string[][]} board - The full game board.
- * @param {string|null} markup - The AI's mark ('x' or 'o'); if null, auto-determined.
- * @param {'very-easy'|'easy'|'medium'|'hard'} hardness - Difficulty level.
- * @param {{row: number, column: number}|null} lastMove - Last move made on the board.
+ * The algorithm:
+ * 1. Determines the active region of the board
+ * 2. Expands the region when marks are near its edges
+ * 3. Runs the selected difficulty AI on the localized region
+ * 4. Pastes the result back into the full board
+ *
+ * Region-based evaluation improves performance on large boards by limiting
+ * computation to the currently relevant play area.
+ *
+ * @param {string[][]} board - Full game board.
+ * @param {string|null} markup - AI mark ('x' or 'o'); auto-detected if null.
+ * @param {'very_easy'|'easy'|'medium'|'hard'} hardness - AI difficulty level.
+ * @param {{row: number, column: number}|null} lastMove - Last move played on the board.
  * @returns {{
  *   winner: string|null,
- *   region: { startRow: number, endRow: number, startColumn: number, endColumn: number },
- *   lastMove: { row: number, column: number },
+ *   region: { startRow: number, endRow: number, startColumn: number, endColumn: number } | null,
+ *   lastMove: { row: number, column: number } | null,
  *   board: string[][]
- * }}
+ * }} Updated game state after the AI move.
  */
 function aiMove(board, markup = null, hardness, lastMove) {
-   // Determine which mark to play ('x' or 'o')
+   // Determine which mark the AI should use
    markup = !markup ? helperFunctions.getNextMarkup(board) : markup;
 
    const winLength = helperFunctions.getWinLength(board);
@@ -36,10 +42,11 @@ function aiMove(board, markup = null, hardness, lastMove) {
          board: board,
       };
    }
-   // Run an initial sanity check (board size, symbols, etc.)
+
+   // Initial validation (board size, symbols, parameters, etc.)
    helperFunctions.startCheck(board, markup, hardness, null, lastMove);
 
-   // --- First move (empty board) ---
+   // --- First move on empty board ---
    if (helperFunctions.isBoardEmpty(board)) {
       const startBoard = board.map((row) => [...row]);
       const startCoordinates = helperFunctions.randomStart(board);
@@ -53,43 +60,54 @@ function aiMove(board, markup = null, hardness, lastMove) {
       };
    }
 
-   // --- Identify region in use ---
+   // --- Detect currently used region of the board ---
    let usedRegion = helperFunctions.extractUsedRegion(board);
 
-   // 🔍 NEW: Expand region if there are marks at its edges
-   // This ensures the AI can "see" just beyond the current play zone
-   usedRegion = helperFunctions.expandRegionIfEdgeHasMark(board, usedRegion);
+   // Expand to full board for small boards,
+   // otherwise expand when marks appear on region edges
+   const regionTemplate = {
+      endRow: board.length - 1,
+      endColumn: board.length - 1,
+      startColumn: 0,
+      startRow: 0,
+   };
 
-   // --- Slice the region for localized AI processing ---
-   let usedBoard = helperFunctions.sliceRegion(board, usedRegion);
+   usedRegion =
+      board.length <= 4
+         ? regionTemplate
+         : helperFunctions.expandRegionIfEdgeHasMark(board, usedRegion);
 
-   // Get available moves and current winner
+   // --- Slice localized board for AI processing ---
+   let usedBoard =
+      board.length <= 4
+         ? board.map((r) => [...r])
+         : helperFunctions.sliceRegion(board, usedRegion);
+
    let availableMoves = helperFunctions.getAvailableMoves(usedBoard);
    const winner = helperFunctions.getWinner(board, null, winLength);
 
+   // Validate again with resolved region
    helperFunctions.startCheck(board, markup, hardness, usedRegion, lastMove);
 
-   // --- Early termination if someone has won or the board is full ---
+   // --- Stop if game already finished ---
    if (winner || helperFunctions.isBoardFull(board)) {
       return { winner, usedRegion, lastMove, board };
    }
 
-   // --- If region has no available moves, expand further ---
-   while (!availableMoves.length && !helperFunctions.isBoardFull(board)) {
-      usedRegion = helperFunctions.expandRegion(
-         usedRegion,
-         board.length,
-         hardness === "hard" ? 2 : 1
-      );
-      usedBoard = helperFunctions.sliceRegion(board, usedRegion);
-      availableMoves = helperFunctions.getAvailableMoves(usedBoard);
-   }
+   // --- Expand region if no moves available inside it ---
+   if (board.length > 4)
+      while (!availableMoves.length && !helperFunctions.isBoardFull(board)) {
+         usedRegion = helperFunctions.expandRegion(
+            usedRegion,
+            board.length,
+            hardness === "hard" ? 2 : 1,
+         );
 
-   
-   console.log('usedBoard')
-   console.log(usedBoard)
+         usedBoard = helperFunctions.sliceRegion(board, usedRegion);
+         availableMoves = helperFunctions.getAvailableMoves(usedBoard);
+      }
 
-   // --- AI move selection based on difficulty ---
+   // --- Select AI move based on difficulty ---
    let result;
    switch (hardness) {
       case "very_easy":
@@ -102,16 +120,16 @@ function aiMove(board, markup = null, hardness, lastMove) {
          result = mediumMove(usedBoard, lastMove || null, winLength);
          break;
       case "hard":
-         result = hardMove(usedBoard, markup, winLength, 4);
+         result = hardMove(usedBoard, markup, winLength, 3);
          break;
       default:
          throw new Error(`Unknown difficulty level: ${hardness}`);
    }
 
-   // --- Paste updated region back into the full board ---
+   // --- Merge AI result back into the full board ---
    helperFunctions.pasteRegion(board, usedRegion, result.board);
 
-   // --- Return computed state ---
+   // --- Return updated game state ---
    return {
       winner: helperFunctions.getWinner(board, null, winLength),
       region: usedRegion,

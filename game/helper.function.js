@@ -22,7 +22,7 @@ const checkBoard = (board) => {
 /**
  * Validates that the provided moves array contains valid `[row, column]` pairs.
  *
- * @param {number[][]} moves - Array of `[row, column]` pairs to validate.
+ * @param {Array<[number, number]>} moves - Array of `[row, column]` coordinate pairs.
  * @throws {TypeError} Thrown when moves is not an array of integer coordinate pairs.
  */
 const checkAvailableMoves = (moves) => {
@@ -37,6 +37,18 @@ const checkAvailableMoves = (moves) => {
       })
    ) {
       throw new TypeError("moves must be Array<[number, number]>");
+   }
+};
+
+/**
+ * Validates that the provided markup is either `"x"` or `"o"`.
+ *
+ * @param {"x" | "o"} markup - Player markup to validate.
+ * @throws {TypeError} Thrown when the markup is not `"x"` or `"o"`.
+ */
+const checkMarkup = (markup) => {
+   if (!["x", "o"].includes(markup)) {
+      throw new TypeError('Invalid "markup": must be "x" or "o".');
    }
 };
 
@@ -117,7 +129,7 @@ const isBoardFull = (board) => {
  * Returns a list of available moves as `[row, column]` pairs for empty cells.
  *
  * @param {string[][]} board - Two-dimensional array representing the game board.
- * @returns {number[][]} Array of `[row, column]` pairs for each empty `"e"` cell.
+ * @returns {Array<[number, number]>} Array of `[row, column]` pairs for each empty `"e"` cell.
  */
 const getAvailableMoves = (board) => {
    const moves = [];
@@ -131,17 +143,16 @@ const getAvailableMoves = (board) => {
 
 /**
  * Filters the provided moves and returns only those that are adjacent to
- * at least one non-empty cell on the board. A move is considered relevant
- * if any of its surrounding positions (including diagonals) contains `"x"` or `"o"`.
+ * at least one non-empty cell. A move is considered relevant if any of its
+ * surrounding positions (including diagonals) contains `"x"` or `"o"`.
  *
  * @param {string[][]} board - Two-dimensional array representing the game board.
- * @param {number[][]} moves - Array of `[row, column]` pairs to evaluate.
- * @returns {number[][]} Array of relevant `[row, column]` moves.
+ * @param {Array<[number, number]>} moves - Array of `[row, column]` pairs to evaluate.
+ * @returns {Array<[number, number]>} Array of relevant `[row, column]` moves.
  * @throws {TypeError} Thrown when the moves structure is invalid.
  */
 const getRelevantAvailableMoves = (board, moves) => {
    checkAvailableMoves(moves);
-
    const directions = [
       [0, 1],
       [0, -1],
@@ -156,15 +167,17 @@ const getRelevantAvailableMoves = (board, moves) => {
 
    for (const move of moves) {
       const [row, column] = move;
+
       for (const [dRow, dCol] of directions) {
          const r = row + dRow;
          const c = column + dCol;
-         const isValidPosition = r >= 0 && r < board.length && c >= 0 && c < board.length;
-         if (isValidPosition) {
-            if (board[r][c] !== "e") {
-               relevantMoves.push(move);
-               break;
-            }
+
+         const isValidPosition =
+            r >= 0 && r < board.length && c >= 0 && c < board[r].length;
+
+         if (isValidPosition && board[r][c] !== "e") {
+            relevantMoves.push(move);
+            break;
          }
       }
    }
@@ -172,13 +185,67 @@ const getRelevantAvailableMoves = (board, moves) => {
    return relevantMoves;
 };
 
+/**
+ * Orders available moves by heuristic relevance. Moves adjacent to the current
+ * player's markup receive higher priority. The result is sorted in descending
+ * score order.
+ *
+ * @param {string[][]} board - Two-dimensional array representing the game board.
+ * @param {Array<[number, number]>} moves - Array of `[row, column]` pairs to order.
+ * @param {"x" | "o"} markup - Current player's markup used for scoring.
+ * @returns {Array<[number, number]>} New array of moves sorted by priority (highest first).
+ * @throws {TypeError} Thrown when moves or markup are invalid.
+ */
+const orderAvailableMoves = (board, moves, markup) => {
+   checkAvailableMoves(moves);
+   checkMarkup(markup);
+
+   const opponent = markup === "x" ? "o" : "x";
+
+   const directions = [
+      [0, 1],
+      [0, -1],
+      [1, 0],
+      [-1, 0],
+      [1, 1],
+      [1, -1],
+      [-1, 1],
+      [-1, -1],
+   ];
+
+   const scoreMove = ([row, col]) => {
+      let score = 0;
+      board[row][col] = opponent;
+      if (getWinner(board) === opponent) score += 100;
+      board[row][col] = "e";
+
+      for (const [dRow, dCol] of directions) {
+         const r = row + dRow;
+         const c = col + dCol;
+
+         const isValidPosition =
+            r >= 0 && r < board.length && c >= 0 && c < board[r].length;
+
+         if (!isValidPosition) continue;
+
+         if (col > Math.floor(board[row].length / 2)) score += 0.8;
+
+         if (board[r][c] === markup) score += 2;
+         else if (board[r][c] === opponent) score += 1;
+      }
+
+      return score;
+   };
+
+   return [...moves].sort((a, b) => scoreMove(b) - scoreMove(a));
+};
 
 /**
- * Iterate over each cell in a rectangular region and call `callback`.
+ * Iterates over each cell in a rectangular region and invokes `callback`.
  *
  * @param {string[][]} board - The full game board.
  * @param {{startColumn:number,endColumn:number,startRow:number,endRow:number}} region - Region bounds.
- * @param {(cell:string,row:number,col:number)=>void} callback - Function called for each cell.
+ * @param {(cell:string,row:number,col:number)=>void} callback - Invoked for each cell in the region.
  * @throws {Error} If `region` is missing required numeric properties.
  */
 const forEachCellInRegion = (board, region, callback) => {
@@ -205,12 +272,12 @@ const forEachCellInRegion = (board, region, callback) => {
 };
 
 /**
- * Determine the winner in the given board or region, respecting `winLength`.
+ * Determines the winner in the given board or region, respecting `winLength`.
  *
  * @param {string[][]} board - The full game board.
  * @param {{startColumn:number,endColumn:number,startRow:number,endRow:number}|null} [region=null] - Optional region to check.
  * @param {number} [winLength=3] - Number of identical marks in a row required to win.
- * @returns {"x"|"o"|"draw"|null} Returns the winner mark, "draw", or null when game is ongoing.
+ * @returns {"x"|"o"|"draw"|null} Winner mark, "draw" when the board is full, or null if the game is ongoing.
  */
 const getWinner = (board, region = null, winLength = 3) => {
    const boardSize = board.length;
@@ -286,26 +353,26 @@ const getWinner = (board, region = null, winLength = 3) => {
 };
 
 /**
- * Validates the game state and input parameters before running checks or AI logic.
- * Ensures the board structure, markup, difficulty, optional region and last move
- * coordinates are valid. Also verifies that the game is not already finished.
+ * Validates the game state and input parameters before running AI logic.
+ * Ensures the board structure, markup, difficulty, optional region, and last move
+ * coordinates are valid. Also verifies that the game has not already finished.
  *
- * @param {string[][]} board - Two-dimensional square board containing `"x"`, `"o"` or `"e"` values.
+ * @param {string[][]} board - Square game board containing `"x"`, `"o"` or `"e"` values.
  * @param {"x" | "o"} markup - Current player's markup.
  * @param {"very_easy" | "easy" | "medium" | "hard"} hardness - AI difficulty level.
- * @param {{startColumn:number,endColumn:number,startRow:number,endRow:number}} [region] - Optional region boundaries to operate on.
- * @param {{row:number,column:number}} [lastMove] - Optional coordinates of the last move.
+ * @param {{startColumn:number,endColumn:number,startRow:number,endRow:number}|null} [region]
+ * Optional region boundaries to operate on.
+ * @param {{row:number,column:number}|null} [lastMove]
+ * Optional coordinates of the last move.
  *
  * @throws {TypeError} Thrown when board structure, markup, hardness, or argument types are invalid.
  * @throws {RangeError} Thrown when board size, region, or lastMove coordinates are out of range.
- * @throws {Error} Thrown when the game is already finished or no moves are available.
+ * @throws {Error} Thrown when the game is already finished.
  */
 const startCheck = (board, markup, hardness, region, lastMove) => {
    checkBoard(board);
 
-   if (!["x", "o"].includes(markup)) {
-      throw new TypeError('Invalid "markup": must be "x" or "o".');
-   }
+   checkMarkup(markup);
 
    const validHardness = ["very_easy", "easy", "medium", "hard"];
    if (!validHardness.includes(hardness)) {
@@ -333,7 +400,8 @@ const startCheck = (board, markup, hardness, region, lastMove) => {
          startColumn <= endColumn &&
          startRow <= endRow;
 
-      if (!validRegion) throw new RangeError("Invalid region coordinates.");
+      if (!validRegion)
+         throw new RangeError(`Invalid region coordinates: ${JSON.stringify(region)}`);
    }
 
    if (lastMove) {
@@ -366,8 +434,8 @@ const startCheck = (board, markup, hardness, region, lastMove) => {
 };
 
 /**
- * Choose a random starting position near the center for an empty board.
- * Picks either floor or ceil of the center coordinate for both row/column.
+ * Choose a random starting position from the center cells of an empty board.
+ * For even board sizes one of the four center cells is selected.
  *
  * @param {string[][]} board - The game board (2D array).
  * @throws {Error} If `board` is not a non-empty 2D array or is not empty.
@@ -393,11 +461,11 @@ const randomStart = (board) => {
 };
 
 /**
- * Find the minimal rectangular region that contains all non-empty marks.
+ * Finds the minimal rectangular region that contains all non-empty marks.
  *
  * @param {string[][]} board - The game board (2D array).
  * @returns {{startColumn:number,endColumn:number,startRow:number,endRow:number}|null}
- *   The bounds of the used region or `null` if the board is empty.
+ * Returns the bounds of the used region, or `null` if the board is empty.
  */
 const extractUsedRegion = (board) => {
    const result = {
@@ -434,13 +502,16 @@ const extractUsedRegion = (board) => {
 };
 
 /**
- * Expand a region by `padding` in all directions while clamping to board bounds.
+ * Expands a region by a fixed padding in all directions while clamping
+ * the result to board boundaries.
  *
- * @param {{startColumn:number,endColumn:number,startRow:number,endRow:number}} region - Region to expand.
- * @param {number} boardSize - Size (width/height) of the square board.
+ * @param {{startColumn:number,endColumn:number,startRow:number,endRow:number}} region
+ * Region to expand.
+ * @param {number} boardSize - Size of the square board.
  * @param {number} [padding=1] - Number of cells to expand on each side.
- * @returns {{startColumn:number,endColumn:number,startRow:number,endRow:number}} The expanded region.
- * @throws {TypeError} If region or boardSize are invalid.
+ * @returns {{startColumn:number,endColumn:number,startRow:number,endRow:number}}
+ * Expanded region clamped to board bounds.
+ * @throws {TypeError} Thrown when region or boardSize is invalid.
  */
 const expandRegion = (region, boardSize, padding = 1) => {
    if (
@@ -544,27 +615,22 @@ const getWinLength = (board) => {
 
 /**
  * Expands a region outward in any direction where a non-empty mark ('x' or 'o')
- * is found along the region's border. Expansion only occurs if there is space
- * left on the board in that direction.
+ * is found along the region border. Expansion only occurs when space remains
+ * inside the board bounds.
  *
- * @function expandRegionIfEdgeHasMark
  * @param {string[][]} board - The full game board.
  * @param {{
  *   startRow: number,
  *   endRow: number,
  *   startColumn: number,
  *   endColumn: number
- * }} region - The current region to check and potentially expand.
+ * }} region - Region to check and potentially expand.
  * @returns {{
  *   startRow: number,
  *   endRow: number,
  *   startColumn: number,
  *   endColumn: number
- * }} The possibly expanded region.
- *
- * @example
- * const region = { startRow: 2, endRow: 4, startColumn: 2, endColumn: 4 };
- * const newRegion = expandRegionIfEdgeHasMark(board, region);
+ * }} Possibly expanded region.
  */
 const expandRegionIfEdgeHasMark = (board, region) => {
    const { startRow, endRow, startColumn, endColumn } = region;
@@ -626,4 +692,5 @@ export default {
    sliceRegion,
    pasteRegion,
    getRelevantAvailableMoves,
+   orderAvailableMoves,
 };
