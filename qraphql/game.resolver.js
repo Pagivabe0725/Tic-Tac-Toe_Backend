@@ -70,9 +70,15 @@ const getGamesByUserId = async (args) => {
       const rows = games.rows;
       const count = games.count;
       const result = { count };
-      result.games = rows.map((game) => game.dataValues);
-      console.log("result");
-      console.log(result);
+      result.games = rows.map((game) => {
+         const data = game.dataValues;
+
+         return {
+            ...data,
+            board: typeof data.board === "string" ? JSON.parse(data.board) : data.board,
+         };
+      });
+
       return result;
    } catch (error) {
       throw new Error(error.message || "Unknown error while fetching games");
