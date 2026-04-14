@@ -54,8 +54,8 @@ const sessionStore = new MySQLStore({
 // Allows the Angular frontend (localhost:4200) to call this API and include cookies.
 app.use(
    cors({
-      //origin: "https://tic-tac-toe-2025-mu.vercel.app",
-      origin: true,
+      origin: "https://tic-tac-toe-2025-mu.vercel.app",
+      // origin: true,
       credentials: true,
    }),
 );
@@ -81,9 +81,9 @@ app.use(
       cookie: {
          maxAge: HOUR * 48, // Session cookie lifetime (48 hours)
          httpOnly: true, // Prevent JS access to the cookie
-       //  secure: true, // Must be true when using HTTPS in production
-         secure: false, // Must be true when using HTTPS in production
-         sameSite: "lax", // Allow cross-site requests (required for cross-origin frontend); must be used with secure: true
+         secure: true, // Must be true when using HTTPS in production
+         //secure: false, // Must be true when using HTTPS in production
+         sameSite: "none", // Allow cross-site requests (required for cross-origin frontend); must be used with secure: true
       },
    }),
 );
@@ -129,7 +129,7 @@ app.use((error, req, res, next) => {
 Connection.sync()
    .then(() => {
       console.log("DB synced");
-      app.listen(3000, () => console.log("The server is running"));
+      app.listen(process.env.PORT || 3000, () => console.log("The server is running"));
    })
    .catch((error) => {
       console.log(error);
