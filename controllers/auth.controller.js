@@ -31,6 +31,7 @@ const signUp = async (req, res, next) => {
  * Throws an error if the session is not valid.
  */
 const checkSession = async (req, res, next) => {
+
    const { userId } = req.session;
 
    if (!userId) {
